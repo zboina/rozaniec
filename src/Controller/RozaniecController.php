@@ -13,6 +13,7 @@ use Rozaniec\RozaniecBundle\Repository\UczestnikRepository;
 use Rozaniec\RozaniecBundle\Service\RotacjaService;
 use Rozaniec\RozaniecBundle\Service\RozaniecNotifier;
 use Rozaniec\RozaniecBundle\Service\RozaniecUserResolver;
+use SerwerSMS\SerwerSMS;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -712,6 +713,88 @@ class RozaniecController extends AbstractController
         }
 
         $this->addFlash($imported > 0 ? 'success' : 'warning', $msg);
+
+        return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+    }
+
+    /**
+     * Admin — wyślij SMS bezpośrednio przez SerwerSMS API.
+     */
+    #[Route('/admin/roza/{id}/uczestnik/{uczestnikId}/sms', name: 'rozaniec_admin_send_sms', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function adminSendSms(Roza $roza, int $uczestnikId): Response
+    {
+        $uczestnik = $this->uczestnikRepo->find($uczestnikId);
+        if (!$uczestnik || $uczestnik->getRoza()->getId() !== $roza->getId()) {
+            throw $this->createNotFoundException();
+        }
+
+        $phone = $uczestnik->getTelefon();
+        if (!$phone) {
+            $this->addFlash('danger', $uczestnik->getFullName() . ' — brak numeru telefonu.');
+            return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+        }
+
+        if (!$uczestnik->getPozycja()) {
+            $this->addFlash('danger', $uczestnik->getFullName() . ' — brak przypisanej pozycji.');
+            return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+        }
+
+        // Znajdź tajemnicę
+        $pairs = $this->rotacjaService->getUczestnicyWithTajemnice($roza);
+        $pair = $pairs[$uczestnik->getPozycja()] ?? null;
+        if (!$pair || !$pair['tajemnica']) {
+            $this->addFlash('danger', 'Nie znaleziono tajemnicy dla pozycji ' . $uczestnik->getPozycja() . '.');
+            return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+        }
+
+        $tajemnica = $pair['tajemnica'];
+        $czescNazwa = $tajemnica->getCzesc()->getNazwa();
+        if (str_contains($czescNazwa, ' - ')) {
+            $czescNazwa = substr($czescNazwa, strpos($czescNazwa, ' - ') + 3);
+        }
+
+        $miesiace = [
+            1 => 'styczeń', 2 => 'luty', 3 => 'marzec', 4 => 'kwiecień',
+            5 => 'maj', 6 => 'czerwiec', 7 => 'lipiec', 8 => 'sierpień',
+            9 => 'wrzesień', 10 => 'październik', 11 => 'listopad', 12 => 'grudzień',
+        ];
+        $now = new \DateTimeImmutable();
+        $miesiac = $miesiace[(int) $now->format('n')] . ' ' . $now->format('Y');
+
+        $text = sprintf(
+            '%s (%s): Twoja tajemnica — %s (%s). Módl się codziennie jedną dziesiątką!',
+            $roza->getNazwa(),
+            $miesiac,
+            $tajemnica->getNazwa(),
+            $czescNazwa,
+        );
+
+        // Token z DSN: serwersms://TOKEN@default
+        $dsn = $_ENV['SERWERSMS_DSN'] ?? '';
+        $token = '';
+        if (preg_match('#^serwersms://([^@]+)@#', $dsn, $m)) {
+            $token = $m[1];
+        }
+
+        if (!$token) {
+            $this->addFlash('danger', 'Brak tokenu SerwerSMS — ustaw SERWERSMS_DSN w .env.local.');
+            return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+        }
+
+        try {
+            $api = new SerwerSMS($token);
+            $result = $api->messages->sendSms($phone, $text, null, ['details' => true, 'utf' => true]);
+
+            if (!empty($result->success) && ($result->queued ?? 0) > 0) {
+                $this->addFlash('success', 'SMS wysłany do ' . $uczestnik->getFullName() . ' (' . $phone . ').');
+            } else {
+                $error = $result->error ?? $result->message ?? json_encode($result);
+                $this->addFlash('danger', 'SerwerSMS nie przyjął wiadomości: ' . (is_string($error) ? $error : json_encode($error)));
+            }
+        } catch (\Throwable $e) {
+            $this->addFlash('danger', 'Błąd wysyłki SMS: ' . $e->getMessage());
+        }
 
         return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
     }
