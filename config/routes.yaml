@@ -1,0 +1,3 @@
+rozaniec_routes:
+    resource: '../src/Controller/'
+    type: attribute

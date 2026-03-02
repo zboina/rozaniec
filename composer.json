@@ -1,0 +1,19 @@
+{
+    "name": "rozaniec/rozaniec-bundle",
+    "description": "Żywy Różaniec — bundle do zarządzania rotacją tajemnic różańcowych",
+    "type": "symfony-bundle",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "symfony/framework-bundle": "^7.0",
+        "doctrine/orm": "^3.0",
+        "doctrine/doctrine-bundle": "^2.10|^3.0",
+        "symfony/security-bundle": "^7.0",
+        "twig/twig": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rozaniec\\RozaniecBundle\\": "src/"
+        }
+    }
+}

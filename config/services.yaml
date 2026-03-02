@@ -1,0 +1,26 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Rozaniec\RozaniecBundle\:
+        resource: '../src/'
+        exclude: '../src/{Entity,Model}'
+
+    Rozaniec\RozaniecBundle\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    Rozaniec\RozaniecBundle\Twig\RozaniecExtension:
+        arguments:
+            $baseTemplate: '%rozaniec.base_template%'
+            $resolver: '@Rozaniec\RozaniecBundle\Service\RozaniecUserResolver'
+        tags: ['twig.extension']
+
+    Rozaniec\RozaniecBundle\Service\RozaniecUserResolver:
+        arguments:
+            $fullNameFields: '%rozaniec.user_full_name_fields%'
+
+    Rozaniec\RozaniecBundle\Command\RozaniecInstallCommand:
+        arguments:
+            $startDate: '%rozaniec.start_date%'

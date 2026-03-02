@@ -1,0 +1,62 @@
+{% extends rozaniec_base_template %}
+
+{% block title %}Żywy Różaniec{% endblock %}
+
+{% block page_pretitle %}Żywy Różaniec Mężczyzn{% endblock %}
+{% block page_title %}Tajemnice Różańcowe{% endblock %}
+
+{% block body %}
+<div class="container-xl">
+    {% for message in app.flashes('danger') %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <div class="d-flex">
+                <div>{{ message }}</div>
+            </div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <div class="d-flex">
+                <div>{{ message }}</div>
+            </div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Żywy Różaniec Mężczyzn</h3>
+            <div class="card-actions">
+                <span class="text-secondary">{{ "now"|date("F Y") }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-secondary">
+                Każdy uczestnik modli się jedną dziesiątką różańca dziennie w wyznaczonej tajemnicy.
+                Co miesiąc następuje automatyczna rotacja — każdy otrzymuje kolejną tajemnicę.
+            </p>
+        </div>
+
+        {% for czescNazwa, tajemnice in grouped %}
+            {% include '@Rozaniec/_lista.html.twig' with {
+                czescNazwa: czescNazwa,
+                tajemnice: tajemnice,
+            } %}
+        {% endfor %}
+    </div>
+
+    {% if is_granted('ROLE_ADMIN') %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h3 class="card-title">Panel administracyjny</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-0">
+                    Jako administrator możesz ręcznie przypisywać osoby do tajemnic, klikając przycisk "Edycja" w tabeli powyżej.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
