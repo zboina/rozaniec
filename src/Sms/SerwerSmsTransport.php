@@ -13,7 +13,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class SerwerSmsTransport extends AbstractTransport
 {
-    private const HOST = 'api2.serwersms.pl';
+    protected const HOST = 'api2.serwersms.pl';
 
     public function __construct(
         private readonly string $accessToken,
