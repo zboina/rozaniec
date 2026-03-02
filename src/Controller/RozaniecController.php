@@ -762,10 +762,13 @@ class RozaniecController extends AbstractController
         $now = new \DateTimeImmutable();
         $miesiac = $miesiace[(int) $now->format('n')] . ' ' . $now->format('Y');
 
+        $kolejnosc = $tajemnica->getKolejnosc()->getNumer();
+
         $text = sprintf(
-            '%s (%s): Twoja tajemnica — %s (%s). Módl się codziennie jedną dziesiątką!',
+            '%s (%s): %d. %s (%s). Módl się codziennie jedną dziesiątką!',
             $roza->getNazwa(),
             $miesiac,
+            $kolejnosc,
             $tajemnica->getNazwa(),
             $czescNazwa,
         );

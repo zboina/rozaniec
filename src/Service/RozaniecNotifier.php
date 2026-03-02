@@ -58,7 +58,7 @@ class RozaniecNotifier
                 continue;
             }
 
-            $this->doNotifyUczestnik($uczestnik, $tajemnica->getNazwa(), $tajemnica->getCzesc()->getNazwa(), $globalChannels, $miesiac, $roza->getNazwa());
+            $this->doNotifyUczestnik($uczestnik, $tajemnica->getNazwa(), $tajemnica->getCzesc()->getNazwa(), $tajemnica->getKolejnosc()->getNumer(), $globalChannels, $miesiac, $roza->getNazwa());
         }
     }
 
@@ -80,6 +80,7 @@ class RozaniecNotifier
 
         $tajemnica = $pair['tajemnica'];
         $czescNazwa = $tajemnica->getCzesc()->getNazwa();
+        $kolejnosc = $tajemnica->getKolejnosc()->getNumer();
         $miesiac = self::polskiMiesiac(new \DateTimeImmutable());
 
         $globalChannels = $this->getGlobalEnabledChannels();
@@ -87,11 +88,11 @@ class RozaniecNotifier
             $globalChannels = ['email'];
         }
 
-        $this->doNotifyUczestnik($uczestnik, $tajemnica->getNazwa(), $czescNazwa, $globalChannels, $miesiac, $roza->getNazwa());
+        $this->doNotifyUczestnik($uczestnik, $tajemnica->getNazwa(), $czescNazwa, $kolejnosc, $globalChannels, $miesiac, $roza->getNazwa());
         return true;
     }
 
-    private function doNotifyUczestnik(Uczestnik $uczestnik, string $tajemnicaNazwa, string $czescNazwa, array $globalChannels, string $miesiac, string $rozaNazwa = 'Żywy Różaniec'): void
+    private function doNotifyUczestnik(Uczestnik $uczestnik, string $tajemnicaNazwa, string $czescNazwa, int $kolejnosc, array $globalChannels, string $miesiac, string $rozaNazwa = 'Żywy Różaniec'): void
     {
         $effectiveChannels = array_intersect($globalChannels, $uczestnik->getEffectiveChannels());
 
@@ -106,7 +107,7 @@ class RozaniecNotifier
 
         // Email — przez Symfony Notifier
         if (in_array('email', $effectiveChannels) && $uczestnik->getEmail()) {
-            $notification = new RotacjaNotification($tajemnicaNazwa, $czescNazwa, $uczestnik->getFullName(), $miesiac, $rozaNazwa);
+            $notification = new RotacjaNotification($tajemnicaNazwa, $czescNazwa, $uczestnik->getFullName(), $miesiac, $rozaNazwa, $kolejnosc);
             $recipient = new Recipient($uczestnik->getEmail(), '');
             try {
                 $this->notifier->send($notification, $recipient);
@@ -129,8 +130,8 @@ class RozaniecNotifier
             }
 
             $text = sprintf(
-                '%s (%s): Twoja tajemnica — %s (%s). Módl się codziennie jedną dziesiątką!',
-                $rozaNazwa, $miesiac, $tajemnicaNazwa, $czescNazwa,
+                '%s (%s): %d. %s (%s). Módl się codziennie jedną dziesiątką!',
+                $rozaNazwa, $miesiac, $kolejnosc, $tajemnicaNazwa, $czescNazwa,
             );
 
             try {

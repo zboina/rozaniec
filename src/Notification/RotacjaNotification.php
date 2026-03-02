@@ -19,6 +19,7 @@ class RotacjaNotification extends Notification implements EmailNotificationInter
         private string $userName,
         private string $miesiac,
         private string $rozaNazwa = 'Żywy Różaniec',
+        private int $kolejnosc = 0,
     ) {
         parent::__construct($this->rozaNazwa . ' — nowa tajemnica');
         $this->importance(Notification::IMPORTANCE_HIGH);
@@ -36,6 +37,7 @@ class RotacjaNotification extends Notification implements EmailNotificationInter
                 'czescNazwa' => $this->czescNazwa,
                 'miesiac' => $this->miesiac,
                 'rozaNazwa' => $this->rozaNazwa,
+                'kolejnosc' => $this->kolejnosc,
             ]);
 
         return new EmailMessage($email);
