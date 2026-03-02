@@ -167,6 +167,16 @@
                                                         {% if uczestnik.telefon %}
                                                             <i class="ti ti-phone text-green" title="{{ uczestnik.telefon }}"></i>
                                                         {% endif %}
+                                                        {% if uczestnik.email %}
+                                                            <form method="post" action="{{ path('rozaniec_admin_notify_uczestnik', {id: roza.id, uczestnikId: uczestnik.id}) }}" class="d-inline ms-1">
+                                                                <button type="submit" class="btn btn-sm btn-icon btn-outline-azure p-0"
+                                                                        style="width: 22px; height: 22px; font-size: 0.7rem;"
+                                                                        title="Wyślij email do {{ uczestnik.fullName }} ({{ uczestnik.email }})"
+                                                                        onclick="return confirm('Wysłać email do {{ uczestnik.fullName }} ({{ uczestnik.email }})?')">
+                                                                    <i class="ti ti-send"></i>
+                                                                </button>
+                                                            </form>
+                                                        {% endif %}
                                                         {% if uczestnik.telefon %}
                                                             <form method="post" action="{{ path('rozaniec_admin_send_sms', {id: roza.id, uczestnikId: uczestnik.id}) }}" class="d-inline ms-1">
                                                                 <button type="submit" class="btn btn-sm btn-icon btn-outline-green p-0"
