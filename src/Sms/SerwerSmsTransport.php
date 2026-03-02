@@ -2,6 +2,7 @@
 
 namespace Rozaniec\RozaniecBundle\Sms;
 
+use SerwerSMS\SerwerSMS;
 use Symfony\Component\Notifier\Exception\TransportException;
 use Symfony\Component\Notifier\Exception\UnsupportedMessageTypeException;
 use Symfony\Component\Notifier\Message\MessageInterface;
@@ -42,41 +43,32 @@ final class SerwerSmsTransport extends AbstractTransport
             throw new UnsupportedMessageTypeException(__CLASS__, SmsMessage::class, $message);
         }
 
-        $body = [
-            'phone' => $message->getPhone(),
-            'text' => $message->getSubject(),
-            'utf' => true,
-            'details' => true,
-        ];
+        $api = new SerwerSMS($this->accessToken);
 
-        if ($this->sender) {
-            $body['sender'] = $this->sender;
+        try {
+            $result = $api->messages->sendSms(
+                $message->getPhone(),
+                $message->getSubject(),
+                $this->sender,
+                ['details' => true, 'utf' => true],
+            );
+        } catch (\Exception $e) {
+            throw new TransportException(
+                sprintf('Unable to send SMS via SerwerSMS: %s', $e->getMessage()),
+            );
         }
 
-        $endpoint = sprintf('https://%s/messages/send_sms.json', $this->getEndpoint());
-
-        $response = $this->client->request('POST', $endpoint, [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->accessToken,
-                'Content-Type' => 'application/json',
-            ],
-            'json' => $body,
-        ]);
-
-        $result = $response->toArray(false);
-
-        if (200 !== $response->getStatusCode() || empty($result['success'])) {
-            $error = $result['error'] ?? $result['message'] ?? 'Unknown error';
+        if (empty($result->success)) {
+            $error = $result->error ?? $result->message ?? 'Unknown error';
             throw new TransportException(
-                sprintf('Unable to send SMS via SerwerSMS: %s', $error),
-                $response,
+                sprintf('Unable to send SMS via SerwerSMS: %s', is_string($error) ? $error : json_encode($error)),
             );
         }
 
         $sentMessage = new SentMessage($message, (string) $this);
 
-        if (!empty($result['items'][0]['id'])) {
-            $sentMessage->setMessageId($result['items'][0]['id']);
+        if (!empty($result->items[0]->id)) {
+            $sentMessage->setMessageId($result->items[0]->id);
         }
 
         return $sentMessage;
