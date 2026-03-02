@@ -79,13 +79,24 @@ class RotacjaService
             return;
         }
 
-        // Przesuń: uczestnik z pozycji P idzie do pozycji ((P + steps - 1) % total) + 1
+        // Oblicz nowe pozycje
+        $moves = [];
         foreach ($uczestnicy as $uczestnik) {
             $staraPozycja = $uczestnik->getPozycja();
             $nowaPozycja = (($staraPozycja - 1 + $steps) % $total) + 1;
-            $uczestnik->setPozycja($nowaPozycja);
+            $moves[] = [$uczestnik, $nowaPozycja];
         }
 
+        // Zeruj pozycje żeby uniknąć UNIQUE constraint
+        foreach ($uczestnicy as $uczestnik) {
+            $uczestnik->setPozycja(null);
+        }
+        $this->em->flush();
+
+        // Ustaw nowe pozycje
+        foreach ($moves as [$uczestnik, $nowaPozycja]) {
+            $uczestnik->setPozycja($nowaPozycja);
+        }
         $this->em->flush();
     }
 
