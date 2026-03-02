@@ -6,6 +6,7 @@ use Rozaniec\RozaniecBundle\Entity\Roza;
 use Rozaniec\RozaniecBundle\Entity\Uczestnik;
 use Rozaniec\RozaniecBundle\Notification\RotacjaNotification;
 use Rozaniec\RozaniecBundle\Repository\RozaniecConfigRepository;
+use SerwerSMS\SerwerSMS;
 use Symfony\Component\Notifier\NotifierInterface;
 use Symfony\Component\Notifier\Recipient\Recipient;
 use Psr\Log\LoggerInterface;
@@ -21,6 +22,15 @@ class RozaniecNotifier
         private RotacjaService $rotacjaService,
         private ?LoggerInterface $logger = null,
     ) {
+    }
+
+    private function getSmsToken(): ?string
+    {
+        $dsn = $_ENV['SERWERSMS_DSN'] ?? '';
+        if (preg_match('#^serwersms://([^@]+)@#', $dsn, $m)) {
+            return $m[1];
+        }
+        return null;
     }
 
     /**
@@ -83,19 +93,9 @@ class RozaniecNotifier
 
     private function doNotifyUczestnik(Uczestnik $uczestnik, string $tajemnicaNazwa, string $czescNazwa, array $globalChannels, string $miesiac, string $rozaNazwa = 'Żywy Różaniec'): void
     {
-        // Kanały efektywne = przecięcie globalnych + tych co uczestnik MA (dane + preferencje)
         $effectiveChannels = array_intersect($globalChannels, $uczestnik->getEffectiveChannels());
 
         if (empty($effectiveChannels)) {
-            return;
-        }
-
-        $userName = $uczestnik->getFullName();
-
-        $email = in_array('email', $effectiveChannels) ? $uczestnik->getEmail() : null;
-        $phone = in_array('sms', $effectiveChannels) ? $uczestnik->getTelefon() : null;
-
-        if (!$email && !$phone) {
             return;
         }
 
@@ -104,23 +104,52 @@ class RozaniecNotifier
             $czescNazwa = substr($czescNazwa, strpos($czescNazwa, ' - ') + 3);
         }
 
-        $notification = new RotacjaNotification(
-            $tajemnicaNazwa,
-            $czescNazwa,
-            $userName,
-            $miesiac,
-            $rozaNazwa,
-        );
+        // Email — przez Symfony Notifier
+        if (in_array('email', $effectiveChannels) && $uczestnik->getEmail()) {
+            $notification = new RotacjaNotification($tajemnicaNazwa, $czescNazwa, $uczestnik->getFullName(), $miesiac, $rozaNazwa);
+            $recipient = new Recipient($uczestnik->getEmail(), '');
+            try {
+                $this->notifier->send($notification, $recipient);
+            } catch (\Throwable $e) {
+                $this->logger?->error('Rozaniec: błąd email do #{id}: {error}', [
+                    'id' => $uczestnik->getId(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
-        $recipient = new Recipient($email ?? '', $phone ?? '');
+        // SMS — bezpośrednio przez SerwerSMS
+        if (in_array('sms', $effectiveChannels) && $uczestnik->getTelefon()) {
+            $token = $this->getSmsToken();
+            if (!$token) {
+                $this->logger?->warning('Rozaniec: brak tokenu SERWERSMS_DSN, SMS nie wysłany do #{id}', [
+                    'id' => $uczestnik->getId(),
+                ]);
+                return;
+            }
 
-        try {
-            $this->notifier->send($notification, $recipient);
-        } catch (\Throwable $e) {
-            $this->logger?->error('Rozaniec: błąd wysyłki powiadomienia do uczestnika #{id}: {error}', [
-                'id' => $uczestnik->getId(),
-                'error' => $e->getMessage(),
-            ]);
+            $text = sprintf(
+                '%s (%s): Twoja tajemnica — %s (%s). Módl się codziennie jedną dziesiątką!',
+                $rozaNazwa, $miesiac, $tajemnicaNazwa, $czescNazwa,
+            );
+
+            try {
+                $api = new SerwerSMS($token);
+                $result = $api->messages->sendSms($uczestnik->getTelefon(), $text, null, ['details' => true, 'utf' => true]);
+
+                if (empty($result->success)) {
+                    $error = $result->error ?? $result->message ?? json_encode($result);
+                    $this->logger?->error('Rozaniec: SMS do #{id} odrzucony: {error}', [
+                        'id' => $uczestnik->getId(),
+                        'error' => is_string($error) ? $error : json_encode($error),
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                $this->logger?->error('Rozaniec: błąd SMS do #{id}: {error}', [
+                    'id' => $uczestnik->getId(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 
