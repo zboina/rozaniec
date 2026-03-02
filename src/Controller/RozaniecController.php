@@ -545,7 +545,7 @@ class RozaniecController extends AbstractController
     }
 
     /**
-     * Admin — wyślij powiadomienie email o aktualnej tajemnicy do jednego uczestnika.
+     * Admin — wyślij powiadomienie o aktualnej tajemnicy do jednego uczestnika (email i/lub SMS).
      */
     #[Route('/admin/roza/{id}/uczestnik/{uczestnikId}/notify', name: 'rozaniec_admin_notify_uczestnik', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN')]
@@ -556,8 +556,8 @@ class RozaniecController extends AbstractController
             throw $this->createNotFoundException();
         }
 
-        if (!$uczestnik->getEmail()) {
-            $this->addFlash('danger', 'Uczestnik ' . $uczestnik->getFullName() . ' nie ma adresu email.');
+        if (!$uczestnik->getEmail() && !$uczestnik->getTelefon()) {
+            $this->addFlash('danger', 'Uczestnik ' . $uczestnik->getFullName() . ' nie ma adresu email ani numeru telefonu.');
             return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
         }
 
@@ -569,7 +569,9 @@ class RozaniecController extends AbstractController
         try {
             $sent = $this->rozaniecNotifier->notifySingle($uczestnik, $roza);
             if ($sent) {
-                $this->addFlash('success', 'Powiadomienie wysłane do ' . $uczestnik->getFullName() . ' (' . $uczestnik->getEmail() . ').');
+                $channels = $uczestnik->getEffectiveChannels();
+                $info = implode(' + ', $channels);
+                $this->addFlash('success', 'Powiadomienie wysłane do ' . $uczestnik->getFullName() . ' (' . $info . ').');
             } else {
                 $this->addFlash('warning', 'Nie udało się wysłać powiadomienia — brak kanałów lub danych.');
             }

@@ -167,12 +167,15 @@
                                                         {% if uczestnik.telefon %}
                                                             <i class="ti ti-phone text-green" title="{{ uczestnik.telefon }}"></i>
                                                         {% endif %}
-                                                        {% if uczestnik.email %}
+                                                        {% if uczestnik.email or uczestnik.telefon %}
+                                                            {% set channels = [] %}
+                                                            {% if uczestnik.email %}{% set channels = channels|merge(['email']) %}{% endif %}
+                                                            {% if uczestnik.telefon %}{% set channels = channels|merge(['SMS']) %}{% endif %}
                                                             <form method="post" action="{{ path('rozaniec_admin_notify_uczestnik', {id: roza.id, uczestnikId: uczestnik.id}) }}" class="d-inline ms-1">
                                                                 <button type="submit" class="btn btn-sm btn-icon btn-outline-azure p-0"
                                                                         style="width: 22px; height: 22px; font-size: 0.7rem;"
-                                                                        title="Wyślij email o tajemnicy do {{ uczestnik.fullName }}"
-                                                                        onclick="return confirm('Wysłać powiadomienie email do {{ uczestnik.fullName }} ({{ uczestnik.email }})?')">
+                                                                        title="Wyślij powiadomienie ({{ channels|join(' + ') }}) do {{ uczestnik.fullName }}"
+                                                                        onclick="return confirm('Wysłać powiadomienie ({{ channels|join(' + ') }}) do {{ uczestnik.fullName }}?')">
                                                                     <i class="ti ti-send"></i>
                                                                 </button>
                                                             </form>
