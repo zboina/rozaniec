@@ -1,0 +1,143 @@
+{% extends rozaniec_base_template %}
+
+{% block title %}Różaniec — Administracja{% endblock %}
+{% block page_pretitle %}Żywy Różaniec{% endblock %}
+{% block page_title %}Panel administracyjny{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ path('rozaniec_index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="ti ti-arrow-left me-1"></i> Widok użytkownika
+    </a>
+{% endblock %}
+
+{% block body %}
+    {% for message in app.flashes('danger') %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+
+    {# ===== LISTA RÓŻ ===== #}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="ti ti-rosette me-2"></i>Róże</h3>
+                    <div class="card-actions">
+                        <a href="{{ path('rozaniec_admin_roza_create') }}" class="btn btn-primary btn-sm">
+                            <i class="ti ti-plus me-1"></i> Nowa róża
+                        </a>
+                    </div>
+                </div>
+                {% if roze|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-vcenter card-table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nazwa</th>
+                                    <th>Uczestników</th>
+                                    <th>Przypisanych</th>
+                                    <th>Wolnych miejsc</th>
+                                    <th>Ostatnia rotacja</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for roza in roze %}
+                                    {% set s = stats[roza.id] %}
+                                    <tr>
+                                        <td class="text-secondary">{{ roza.id }}</td>
+                                        <td><strong>{{ roza.nazwa }}</strong></td>
+                                        <td>{{ s.total }}</td>
+                                        <td><span class="text-success">{{ s.assigned }}</span></td>
+                                        <td><span class="text-warning">{{ 20 - s.assigned }}</span></td>
+                                        <td class="text-secondary">{{ roza.ostatniaRotacja ?? '—' }}</td>
+                                        <td>
+                                            <a href="{{ path('rozaniec_admin_roza', {id: roza.id}) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="ti ti-settings me-1"></i> Zarządzaj
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="card-body">
+                        <div class="empty">
+                            <div class="empty-icon">
+                                <i class="ti ti-rosette" style="font-size: 3rem; color: #adb5bd;"></i>
+                            </div>
+                            <p class="empty-title">Brak róż</p>
+                            <p class="empty-subtitle text-secondary">Utwórz pierwszą różę, aby rozpocząć zarządzanie grupą różańcową.</p>
+                            <div class="empty-action">
+                                <a href="{{ path('rozaniec_admin_roza_create') }}" class="btn btn-primary">
+                                    <i class="ti ti-plus me-1"></i> Utwórz pierwszą różę
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ===== USTAWIENIA POWIADOMIEŃ (globalne) ===== #}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="ti ti-bell me-2"></i>Ustawienia powiadomień (globalne)</h3>
+        </div>
+        <form method="post" action="{{ path('rozaniec_admin_notify_save') }}">
+            <input type="hidden" name="_redirect" value="{{ path('rozaniec_admin') }}">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-check form-switch">
+                                <input type="checkbox" name="notify_enabled" value="1" class="form-check-input"
+                                       {% if rozaniec_config('notify_enabled') != '0' %}checked{% endif %}>
+                                <span class="form-check-label"><strong>Powiadomienia włączone</strong></span>
+                            </label>
+                            <div class="text-secondary" style="font-size: 0.8rem;">
+                                Globalny wyłącznik — wyłącza wszystkie kanały naraz.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Aktywne kanały</label>
+                        <div class="d-flex gap-4">
+                            <label class="form-check">
+                                <input type="checkbox" name="notify_email_enabled" value="1" class="form-check-input"
+                                       {% if rozaniec_config('notify_email_enabled') != '0' %}checked{% endif %}>
+                                <span class="form-check-label">
+                                    <i class="ti ti-mail me-1"></i> E-mail
+                                </span>
+                            </label>
+                            <label class="form-check">
+                                <input type="checkbox" name="notify_sms_enabled" value="1" class="form-check-input"
+                                       {% if rozaniec_config('notify_sms_enabled') != '0' %}checked{% endif %}>
+                                <span class="form-check-label">
+                                    <i class="ti ti-device-mobile-message me-1"></i> SMS
+                                    <span class="badge bg-azure-lt ms-1">wymaga konfiguracji transportu</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-device-floppy me-1"></i> Zapisz ustawienia
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

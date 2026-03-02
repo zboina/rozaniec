@@ -3,7 +3,6 @@
 namespace Rozaniec\RozaniecBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Rozaniec\RozaniecBundle\Model\RozaniecUserInterface;
 use Rozaniec\RozaniecBundle\Repository\TajemnicaRepository;
 
 #[ORM\Entity(repositoryClass: TajemnicaRepository::class)]
@@ -28,10 +27,6 @@ class Tajemnica
     #[ORM\ManyToOne(targetEntity: Kolejnosc::class, inversedBy: 'tajemnice')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Kolejnosc $kolejnosc = null;
-
-    #[ORM\ManyToOne(targetEntity: RozaniecUserInterface::class)]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?RozaniecUserInterface $user = null;
 
     public function getId(): ?int
     {
@@ -79,17 +74,6 @@ class Tajemnica
     public function setKolejnosc(?Kolejnosc $kolejnosc): static
     {
         $this->kolejnosc = $kolejnosc;
-        return $this;
-    }
-
-    public function getUser(): ?RozaniecUserInterface
-    {
-        return $this->user;
-    }
-
-    public function setUser(?RozaniecUserInterface $user): static
-    {
-        $this->user = $user;
         return $this;
     }
 

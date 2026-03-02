@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f6fa; margin: 0; padding: 20px; }
+        .container { max-width: 520px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #1a1c3d 0%, #2d1b4e 100%); color: #fff; padding: 24px 32px; text-align: center; }
+        .header h1 { margin: 0; font-size: 20px; font-weight: 300; letter-spacing: 0.5px; }
+        .header .gold { color: #d4af37; font-weight: 600; }
+        .body { padding: 32px; }
+        .greeting { color: #495057; font-size: 15px; margin-bottom: 20px; }
+        .card { background: #fffef5; border-left: 4px solid #d4af37; border-radius: 4px; padding: 16px 20px; margin-bottom: 20px; }
+        .card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #868e96; margin-bottom: 4px; }
+        .card .tajemnica { font-size: 18px; font-weight: 600; color: #1a1c3d; margin-bottom: 4px; }
+        .card .czesc { font-size: 13px; color: #868e96; }
+        .message { color: #495057; font-size: 14px; line-height: 1.6; }
+        .footer { background: #f8f9fa; padding: 16px 32px; text-align: center; font-size: 12px; color: #adb5bd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ rozaNazwa|default('Żywy Różaniec') }}</h1>
+        </div>
+        <div class="body">
+            <div class="greeting">
+                Witaj, <strong>{{ userName }}</strong>!
+            </div>
+
+            <div class="card">
+                <div class="label">Twoja tajemnica na {{ miesiac }}</div>
+                <div class="tajemnica">{{ tajemnicaNazwa }}</div>
+                <div class="czesc">{{ czescNazwa }}</div>
+            </div>
+
+            <div class="message">
+                Módl się codziennie jedną dziesiątką różańca w wyznaczonej tajemnicy.
+                Pamiętaj o intencjach wspólnoty!
+            </div>
+        </div>
+        <div class="footer">
+            {{ rozaNazwa|default('Żywy Różaniec') }} &middot; Powiadomienie automatyczne
+        </div>
+    </div>
+</body>
+</html>

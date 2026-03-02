@@ -1,0 +1,248 @@
+{% extends rozaniec_base_template %}
+
+{% block title %}{{ roza.nazwa }} — Żywy Różaniec{% endblock %}
+{% block page_pretitle %}Żywy Różaniec{% endblock %}
+{% block page_title %}{{ roza.nazwa }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ path('rozaniec_index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="ti ti-arrow-left me-1"></i> Moje Róże
+    </a>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .rozaniec-hero {
+        background: linear-gradient(135deg, #1a1c3d 0%, #2d1b4e 50%, #1a1c3d 100%);
+        border-radius: 8px;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .rozaniec-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle at 30% 40%, rgba(212,175,55,0.08) 0%, transparent 50%),
+                    radial-gradient(circle at 70% 60%, rgba(212,175,55,0.05) 0%, transparent 40%);
+        pointer-events: none;
+    }
+    .rozaniec-hero .hero-content { position: relative; z-index: 1; }
+    .rozaniec-svg { opacity: 0.15; }
+    .moja-tajemnica-card {
+        border-left: 4px solid #d4af37;
+        background: linear-gradient(135deg, #fffef5 0%, #fff9e6 100%);
+    }
+    .czesc-card { transition: transform 0.15s ease; }
+    .czesc-card:hover { transform: translateY(-2px); }
+    .czesc-radosne .czesc-header { background: linear-gradient(135deg, #ffd43b, #fab005); color: #1a1c3d; }
+    .czesc-swiatla .czesc-header { background: linear-gradient(135deg, #74c0fc, #339af0); color: #fff; }
+    .czesc-bolesne .czesc-header { background: linear-gradient(135deg, #e03131, #c92a2a); color: #fff; }
+    .czesc-chwalebne .czesc-header { background: linear-gradient(135deg, #51cf66, #2f9e44); color: #fff; }
+    .czesc-header { padding: 0.75rem 1rem; border-radius: 8px 8px 0 0; }
+    .czesc-header h3 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+    .tajemnica-row { padding: 0.5rem 1rem; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 0.75rem; }
+    .tajemnica-row:last-child { border-bottom: none; }
+    .tajemnica-row.is-mine { background: #fff9db; }
+    .tajemnica-numer {
+        width: 28px; height: 28px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+        background: #f1f3f5; color: #495057;
+    }
+    .tajemnica-row.is-mine .tajemnica-numer { background: #d4af37; color: #fff; }
+    .tajemnica-nazwa { flex: 1; font-size: 0.9rem; }
+    .tajemnica-osoba { font-size: 0.8rem; color: #868e96; flex-shrink: 0; }
+    .tajemnica-osoba.assigned { color: #495057; font-weight: 500; }
+    .stat-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+</style>
+{% endblock %}
+
+{% block body %}
+    {% for message in app.flashes('danger') %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+
+    {# ===== HERO ===== #}
+    <div class="rozaniec-hero p-4 mb-4">
+        <div class="row align-items-center hero-content">
+            <div class="col-md-8">
+                <h1 class="mb-2" style="font-size: 1.75rem; font-weight: 300; letter-spacing: 0.5px;">
+                    {{ roza.nazwa }}
+                </h1>
+                <p class="mb-0" style="opacity: 0.7; font-size: 0.95rem;">
+                    {{ "now"|date("F Y") }} &middot;
+                    {{ assignedCount }}/{{ totalCount }} uczestników &middot;
+                    Codziennie jedna dziesiątka w wyznaczonej tajemnicy
+                </p>
+            </div>
+            <div class="col-md-4 text-end d-none d-md-block">
+                <svg class="rozaniec-svg" width="140" height="200" viewBox="0 0 140 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="62" y="2" width="16" height="50" rx="3" fill="#d4af37"/>
+                    <rect x="48" y="14" width="44" height="14" rx="3" fill="#d4af37"/>
+                    <line x1="70" y1="52" x2="70" y2="82" stroke="#d4af37" stroke-width="2"/>
+                    <circle cx="70" cy="58" r="4" fill="#d4af37"/>
+                    <circle cx="70" cy="68" r="4" fill="#d4af37"/>
+                    <circle cx="70" cy="78" r="4" fill="#d4af37"/>
+                    <circle cx="70" cy="140" r="50" stroke="#d4af37" stroke-width="1.5" fill="none" opacity="0.3"/>
+                    <circle cx="70"  cy="90"  r="5.5" fill="#d4af37" opacity="1"/>
+                    <circle cx="85"  cy="92"  r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="98"  cy="99"  r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="108" cy="110" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="114" cy="124" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="120" cy="140" r="5.5" fill="#d4af37" opacity="1"/>
+                    <circle cx="114" cy="156" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="108" cy="170" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="98"  cy="181" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="85"  cy="188" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="70"  cy="190" r="5.5" fill="#d4af37" opacity="1"/>
+                    <circle cx="55"  cy="188" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="42"  cy="181" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="32"  cy="170" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="26"  cy="156" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="20"  cy="140" r="5.5" fill="#d4af37" opacity="1"/>
+                    <circle cx="26"  cy="124" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="32"  cy="110" r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="42"  cy="99"  r="4" fill="#d4af37" opacity="0.6"/>
+                    <circle cx="55"  cy="92"  r="4" fill="#d4af37" opacity="0.6"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    {# ===== MOJA TAJEMNICA ===== #}
+    {% if mojaTajemnica %}
+        <div class="card moja-tajemnica-card mb-4">
+            <div class="card-body py-3">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="stat-icon bg-yellow-lt">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                 fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="text-secondary" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Twoja tajemnica na ten miesiąc</div>
+                        <div style="font-size: 1.15rem; font-weight: 600; color: #1a1c3d;">
+                            {{ mojaTajemnica.kolejnosc.numer }}. {{ mojaTajemnica.nazwa }}
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.85rem;">{{ mojaTajemnica.czesc.nazwa }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <form method="post" action="{{ path('rozaniec_toggle', {rozaId: roza.id, pozycja: mojUczestnik.pozycja}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('rozaniec_toggle_' ~ roza.id ~ '_' ~ mojUczestnik.pozycja) }}">
+                            <button type="submit" class="btn btn-outline-warning btn-sm"
+                                    onclick="return confirm('Czy na pewno chcesz zrezygnować z tej tajemnicy?')">
+                                Rezygnuję
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% elseif mojUczestnik is null or mojUczestnik.pozycja is null %}
+        <div class="card mb-4" style="border-left: 4px solid #74c0fc;">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-azure-lt">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; color: #1a1c3d;">Nie masz jeszcze przypisanej tajemnicy</div>
+                        <div class="text-secondary" style="font-size: 0.85rem;">Kliknij "Modlę się!" przy wolnej tajemnicy poniżej, aby dołączyć.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ===== CZTERY CZĘŚCI ===== #}
+    {% set czescStyles = {
+        'Radosne': 'czesc-radosne',
+        'Światła': 'czesc-swiatla',
+        'Bolesne': 'czesc-bolesne',
+        'Chwalebne': 'czesc-chwalebne',
+    } %}
+
+    <div class="row row-cards">
+        {% for czescNazwa, lista in grouped %}
+            {% set styleClass = '' %}
+            {% for key, cls in czescStyles %}
+                {% if key in czescNazwa %}
+                    {% set styleClass = cls %}
+                {% endif %}
+            {% endfor %}
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card czesc-card {{ styleClass }} mb-3">
+                    <div class="czesc-header">
+                        <h3>
+                            {% if 'Radosne' in czescNazwa %}
+                                <i class="ti ti-sun me-1"></i>Radosne
+                            {% elseif 'Światła' in czescNazwa %}
+                                <i class="ti ti-bulb me-1"></i>Światła
+                            {% elseif 'Bolesne' in czescNazwa %}
+                                <i class="ti ti-heart-broken me-1"></i>Bolesne
+                            {% elseif 'Chwalebne' in czescNazwa %}
+                                <i class="ti ti-crown me-1"></i>Chwalebne
+                            {% endif %}
+                        </h3>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for item in lista %}
+                            {% set tajemnica = item.tajemnica %}
+                            {% set uczestnik = item.uczestnik %}
+                            {% set isMine = mojUczestnik and uczestnik and mojUczestnik.id == uczestnik.id %}
+                            <div class="tajemnica-row{{ isMine ? ' is-mine' : '' }}">
+                                <div class="tajemnica-numer">{{ tajemnica.kolejnosc.numer }}</div>
+                                <div class="tajemnica-nazwa">
+                                    {{ tajemnica.nazwa }}
+                                    {% if uczestnik %}
+                                        <div class="tajemnica-osoba assigned">
+                                            {{ uczestnik.fullName }}
+                                        </div>
+                                    {% elseif not mojaTajemnica %}
+                                        <form method="post" action="{{ path('rozaniec_toggle', {rozaId: roza.id, pozycja: tajemnica.pozycja}) }}" class="mt-1">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('rozaniec_toggle_' ~ roza.id ~ '_' ~ tajemnica.pozycja) }}">
+                                            <button type="submit" class="btn btn-sm btn-primary py-0 px-2" style="font-size: 0.75rem;">
+                                                Modlę się!
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <div class="tajemnica-osoba">wolne</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# ===== Link do admina ===== #}
+    {% if is_granted('ROLE_ADMIN') %}
+        <div class="text-center mt-2 mb-4">
+            <a href="{{ path('rozaniec_admin_roza', {id: roza.id}) }}" class="btn btn-outline-secondary">
+                <i class="ti ti-settings me-1"></i> Zarządzaj tą różą
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,464 @@
+{% extends rozaniec_base_template %}
+
+{% block title %}{{ roza.nazwa }} — Administracja{% endblock %}
+{% block page_pretitle %}Żywy Różaniec{% endblock %}
+{% block page_title %}{{ roza.nazwa }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ path('rozaniec_admin') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="ti ti-arrow-left me-1"></i> Wszystkie róże
+    </a>
+    <a href="{{ path('rozaniec_roza_show', {id: roza.id}) }}" class="btn btn-outline-primary btn-sm ms-1">
+        <i class="ti ti-eye me-1"></i> Widok użytkownika
+    </a>
+{% endblock %}
+
+{% block body %}
+    {% for message in app.flashes('danger') %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+    {% for message in app.flashes('warning') %}
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+
+    {# ===== STATYSTYKI ===== #}
+    <div class="row mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Uczestników łącznie</div>
+                    </div>
+                    <div class="h1 mb-0">{{ uczestnicy|length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Przypisanych do pozycji</div>
+                    </div>
+                    <div class="h1 mb-0 text-success">{{ assignedCount }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Wolnych pozycji</div>
+                    </div>
+                    <div class="h1 mb-0 text-warning">{{ totalCount - assignedCount }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Ostatnia rotacja</div>
+                    </div>
+                    <div class="h1 mb-0 text-secondary">{{ roza.ostatniaRotacja ?? '—' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ===== ZAKŁADKI ===== #}
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a href="#tab-tajemnice" class="nav-link active" data-bs-toggle="tab" role="tab">
+                        <i class="ti ti-rosette me-1"></i> Tajemnice
+                        <span class="badge bg-secondary ms-1">{{ assignedCount }}/{{ totalCount }}</span>
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a href="#tab-uczestnicy" class="nav-link" data-bs-toggle="tab" role="tab">
+                        <i class="ti ti-users me-1"></i> Uczestnicy
+                        <span class="badge bg-secondary ms-1">{{ uczestnicy|length }}</span>
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a href="#tab-rotacja" class="nav-link" data-bs-toggle="tab" role="tab">
+                        <i class="ti ti-rotate me-1"></i> Rotacja
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body p-0">
+            <div class="tab-content">
+
+                {# ==================== TAB: TAJEMNICE ==================== #}
+                <div class="tab-pane active show" id="tab-tajemnice" role="tabpanel">
+                    {% set czescColors = {
+                        'Radosne': 'bg-yellow-lt',
+                        'Światła': 'bg-azure-lt',
+                        'Bolesne': 'bg-red-lt',
+                        'Chwalebne': 'bg-green-lt',
+                    } %}
+
+                    <div class="table-responsive">
+                        <table class="table table-vcenter card-table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px">Poz.</th>
+                                    <th style="width: 50px">#</th>
+                                    <th>Część</th>
+                                    <th>Tajemnica</th>
+                                    <th style="width: 250px">Przypisany uczestnik</th>
+                                    <th style="width: 200px">Przypisz</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for czescNazwa, lista in grouped %}
+                                    {% set bgClass = '' %}
+                                    {% for key, cls in czescColors %}
+                                        {% if key in czescNazwa %}
+                                            {% set bgClass = cls %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% for item in lista %}
+                                        {% set tajemnica = item.tajemnica %}
+                                        {% set uczestnik = item.uczestnik %}
+                                        <tr>
+                                            <td class="text-secondary">{{ tajemnica.pozycja }}</td>
+                                            <td>
+                                                <span class="badge {{ bgClass }}">{{ tajemnica.kolejnosc.numer }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="text-secondary" style="font-size: 0.8rem;">
+                                                    {% if 'Radosne' in czescNazwa %}Radosne
+                                                    {% elseif 'Światła' in czescNazwa %}Światła
+                                                    {% elseif 'Bolesne' in czescNazwa %}Bolesne
+                                                    {% elseif 'Chwalebne' in czescNazwa %}Chwalebne
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                            <td>{{ tajemnica.nazwa }}</td>
+                                            <td>
+                                                {% if uczestnik %}
+                                                    <span class="d-flex align-items-center gap-1">
+                                                        <span class="avatar avatar-xs bg-primary-lt" style="font-size: 0.65rem;">
+                                                            {{ uczestnik.firstName|first|upper }}
+                                                        </span>
+                                                        <strong>{{ uczestnik.fullName }}</strong>
+                                                        {% if uczestnik.user %}
+                                                            <i class="ti ti-link text-primary" title="Powiązany z kontem"></i>
+                                                        {% endif %}
+                                                        {% if uczestnik.email %}
+                                                            <i class="ti ti-mail text-azure" title="{{ uczestnik.email }}"></i>
+                                                        {% endif %}
+                                                        {% if uczestnik.telefon %}
+                                                            <i class="ti ti-phone text-green" title="{{ uczestnik.telefon }}"></i>
+                                                        {% endif %}
+                                                        {% if uczestnik.email %}
+                                                            <form method="post" action="{{ path('rozaniec_admin_notify_uczestnik', {id: roza.id, uczestnikId: uczestnik.id}) }}" class="d-inline ms-1">
+                                                                <button type="submit" class="btn btn-sm btn-icon btn-outline-azure p-0"
+                                                                        style="width: 22px; height: 22px; font-size: 0.7rem;"
+                                                                        title="Wyślij email o tajemnicy do {{ uczestnik.fullName }}"
+                                                                        onclick="return confirm('Wysłać powiadomienie email do {{ uczestnik.fullName }} ({{ uczestnik.email }})?')">
+                                                                    <i class="ti ti-send"></i>
+                                                                </button>
+                                                            </form>
+                                                        {% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-warning">
+                                                        <i class="ti ti-alert-circle me-1"></i>wolne
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% set unassigned = [] %}
+                                                {% for u in uczestnicy %}
+                                                    {% if u.pozycja is null %}
+                                                        {% set unassigned = unassigned|merge([u]) %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {% if uczestnik %}
+                                                    <form method="post" action="{{ path('rozaniec_admin_assign', {id: roza.id, uczestnikId: uczestnik.id}) }}" class="d-inline">
+                                                        <input type="hidden" name="pozycja" value="">
+                                                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Odepnij"
+                                                                onclick="return confirm('Odpiąć {{ uczestnik.fullName }} od pozycji {{ tajemnica.pozycja }}?')">
+                                                            <i class="ti ti-x"></i>
+                                                        </button>
+                                                    </form>
+                                                {% elseif unassigned|length > 0 %}
+                                                    <form method="post" class="d-flex gap-1 align-items-center">
+                                                        <select name="uczestnik_select" class="form-select form-select-sm"
+                                                                style="font-size: 0.8rem; padding: 0.2rem 1.8rem 0.2rem 0.4rem;"
+                                                                onchange="if(this.value) this.form.action=this.value; this.form.querySelector('button').disabled=!this.value;">
+                                                            <option value="">— wybierz —</option>
+                                                            {% for u in unassigned %}
+                                                                <option value="{{ path('rozaniec_admin_assign', {id: roza.id, uczestnikId: u.id}) }}">
+                                                                    {{ u.fullName }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        <input type="hidden" name="pozycja" value="{{ tajemnica.pozycja }}">
+                                                        <button type="submit" class="btn btn-sm btn-icon btn-primary" disabled title="Przypisz">
+                                                            <i class="ti ti-check"></i>
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <span class="text-muted" style="font-size: 0.8rem;">brak wolnych</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {# ==================== TAB: UCZESTNICY ==================== #}
+                <div class="tab-pane" id="tab-uczestnicy" role="tabpanel">
+
+                    {# --- Dodaj uczestnika --- #}
+                    <div class="p-3 border-bottom bg-light">
+                        <h4 class="mb-3"><i class="ti ti-user-plus me-1"></i> Dodaj uczestnika</h4>
+                        <form method="post" action="{{ path('rozaniec_admin_add_uczestnik', {id: roza.id}) }}">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-2">
+                                    <label class="form-label">Imię <span class="text-danger">*</span></label>
+                                    <input type="text" name="firstName" class="form-control form-control-sm" required placeholder="Jan">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Nazwisko <span class="text-danger">*</span></label>
+                                    <input type="text" name="lastName" class="form-control form-control-sm" required placeholder="Kowalski">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="jan@example.com">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Telefon</label>
+                                    <input type="text" name="telefon" class="form-control form-control-sm" placeholder="+48...">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Konto Symfony</label>
+                                    <select name="user_id" class="form-select form-select-sm">
+                                        <option value="">— brak —</option>
+                                        {% for u in users %}
+                                            {% if u.id not in assignedUserIds %}
+                                                <option value="{{ u.id }}">{{ rozaniec_name(u) }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2 col-lg-1">
+                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                        <i class="ti ti-plus me-1"></i> Dodaj
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    {# --- Import uczestników --- #}
+                    <div class="p-3 border-bottom">
+                        <div class="d-flex align-items-center mb-2">
+                            <h4 class="mb-0"><i class="ti ti-file-import me-1"></i> Import uczestników</h4>
+                            <a class="btn btn-ghost-secondary btn-sm ms-2" data-bs-toggle="collapse" href="#import-collapse" role="button">
+                                <i class="ti ti-chevron-down me-1"></i> rozwiń
+                            </a>
+                        </div>
+                        <div class="collapse" id="import-collapse">
+                            <form method="post" action="{{ path('rozaniec_admin_import', {id: roza.id}) }}" enctype="multipart/form-data">
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <div class="mb-2">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-primary" id="import-tab-text"
+                                                        onclick="document.getElementById('import-text-area').style.display='';document.getElementById('import-file-area').style.display='none';this.className='btn btn-primary';document.getElementById('import-tab-file').className='btn btn-outline-primary';">
+                                                    <i class="ti ti-clipboard-text me-1"></i> Wklej tekst
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary" id="import-tab-file"
+                                                        onclick="document.getElementById('import-file-area').style.display='';document.getElementById('import-text-area').style.display='none';this.className='btn btn-primary';document.getElementById('import-tab-text').className='btn btn-outline-primary';">
+                                                    <i class="ti ti-file-upload me-1"></i> Wczytaj plik
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="import-text-area">
+                                            <textarea name="import_text" class="form-control form-control-sm" rows="5"
+                                                      placeholder="1;Jan;Kowalski;jan@example.com;+48123456789
+2;Anna;Nowak;anna@example.com
+3;Piotr;Wiśniewski"></textarea>
+                                        </div>
+                                        <div id="import-file-area" style="display: none;">
+                                            <input type="file" name="import_file" class="form-control form-control-sm" accept=".csv,.txt">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 d-flex flex-column justify-content-between">
+                                        <div class="text-secondary" style="font-size: 0.8rem;">
+                                            <i class="ti ti-info-circle me-1"></i>
+                                            Format: <code>pozycja;imię;nazwisko;email;telefon</code><br>
+                                            Email i telefon opcjonalne. Separator <code>;</code> lub <code>,</code> — auto.<br>
+                                            Linie <code>#</code> są pomijane.
+                                        </div>
+                                        <div class="mt-2">
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                <i class="ti ti-file-import me-1"></i> Importuj
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    {# --- Tabela uczestników --- #}
+                    <form method="post" action="{{ path('rozaniec_admin_uczestnicy_save', {id: roza.id}) }}">
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px">Pozycja</th>
+                                        <th>Imię</th>
+                                        <th>Nazwisko</th>
+                                        <th>Email</th>
+                                        <th>Telefon</th>
+                                        <th style="width: 180px">Konto Symfony</th>
+                                        <th>Powiadomienia</th>
+                                        <th style="width: 60px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for u in uczestnicy %}
+                                        <tr>
+                                            <td>
+                                                {% if u.pozycja %}
+                                                    <span class="badge bg-primary">{{ u.pozycja }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <input type="text" name="firstName[{{ u.id }}]" class="form-control form-control-sm"
+                                                       value="{{ u.firstName }}" placeholder="Imię">
+                                            </td>
+                                            <td>
+                                                <input type="text" name="lastName[{{ u.id }}]" class="form-control form-control-sm"
+                                                       value="{{ u.lastName }}" placeholder="Nazwisko">
+                                            </td>
+                                            <td>
+                                                <input type="email" name="email[{{ u.id }}]" class="form-control form-control-sm"
+                                                       value="{{ u.email }}" placeholder="email@...">
+                                            </td>
+                                            <td>
+                                                <input type="text" name="telefon[{{ u.id }}]" class="form-control form-control-sm"
+                                                       value="{{ u.telefon }}" placeholder="+48...">
+                                            </td>
+                                            <td>
+                                                <select name="user_id[{{ u.id }}]" class="form-select form-select-sm">
+                                                    <option value="0">— brak —</option>
+                                                    {% for usr in users %}
+                                                        <option value="{{ usr.id }}"
+                                                            {% if u.user and u.user.id == usr.id %}selected{% endif %}
+                                                            {% if usr.id in assignedUserIds and (not u.user or u.user.id != usr.id) %}disabled{% endif %}>
+                                                            {{ rozaniec_name(usr) }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <label class="form-check form-check-inline mb-0">
+                                                    <input type="checkbox" name="channels[{{ u.id }}][]" value="email" class="form-check-input"
+                                                           {% if u.hasNotifyChannel('email') %}checked{% endif %}
+                                                           {% if not u.email %}disabled title="Brak adresu email"{% endif %}>
+                                                    <span class="form-check-label" style="font-size: 0.8rem;"><i class="ti ti-mail"></i></span>
+                                                </label>
+                                                <label class="form-check form-check-inline mb-0">
+                                                    <input type="checkbox" name="channels[{{ u.id }}][]" value="sms" class="form-check-input"
+                                                           {% if u.hasNotifyChannel('sms') %}checked{% endif %}
+                                                           {% if not u.telefon %}disabled title="Brak nr telefonu"{% endif %}>
+                                                    <span class="form-check-label" style="font-size: 0.8rem;"><i class="ti ti-device-mobile-message"></i></span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <form method="post" action="{{ path('rozaniec_admin_delete_uczestnik', {id: roza.id, uczestnikId: u.id}) }}" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-icon"
+                                                            onclick="return confirm('Usunąć {{ u.fullName }}?')" title="Usuń">
+                                                        <i class="ti ti-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if uczestnicy|length > 0 %}
+                            <div class="card-footer text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="ti ti-device-floppy me-1"></i> Zapisz dane uczestników
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center text-muted">
+                                Brak uczestników. Dodaj ręcznie powyżej lub zaimportuj z pliku.
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+
+                {# ==================== TAB: ROTACJA ==================== #}
+                <div class="tab-pane" id="tab-rotacja" role="tabpanel">
+                    <div class="p-3">
+                        <div class="row align-items-end">
+                            <div class="col-auto">
+                                <form method="post" action="{{ path('rozaniec_admin_rotacja', {id: roza.id}) }}" class="d-flex align-items-end gap-3"
+                                      onsubmit="return confirm('Czy na pewno chcesz wykonać rotację?')">
+                                    <div>
+                                        <label class="form-label">Liczba kroków</label>
+                                        <input type="number" name="steps" class="form-control" value="1" min="1" max="19" style="width: 100px;">
+                                    </div>
+                                    <div>
+                                        <label class="form-check form-label mb-0">
+                                            <input type="checkbox" name="send_notifications" value="1" class="form-check-input" checked>
+                                            Wyślij powiadomienia
+                                        </label>
+                                    </div>
+                                    <div class="btn-group">
+                                        <button type="submit" name="direction" value="back" class="btn btn-outline-warning">
+                                            <i class="ti ti-arrow-left me-1"></i> Do tyłu
+                                        </button>
+                                        <button type="submit" name="direction" value="forward" class="btn btn-outline-primary">
+                                            Do przodu <i class="ti ti-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="col">
+                                <div class="text-secondary" style="font-size: 0.85rem;">
+                                    <i class="ti ti-info-circle me-1"></i>
+                                    <strong>Do przodu</strong> = jak przy normalnej miesięcznej rotacji.<br>
+                                    <strong>Do tyłu</strong> = cofnięcie rotacji.<br>
+                                    Automatyczna rotacja następuje 1. dnia każdego miesiąca.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}

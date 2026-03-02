@@ -3,94 +3,121 @@
 namespace Rozaniec\RozaniecBundle\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Rozaniec\RozaniecBundle\Entity\Roza;
 use Rozaniec\RozaniecBundle\Entity\Tajemnica;
-use Rozaniec\RozaniecBundle\Repository\RozaniecConfigRepository;
+use Rozaniec\RozaniecBundle\Entity\Uczestnik;
 use Rozaniec\RozaniecBundle\Repository\TajemnicaRepository;
+use Rozaniec\RozaniecBundle\Repository\UczestnikRepository;
 
 class RotacjaService
 {
     public function __construct(
         private EntityManagerInterface $em,
         private TajemnicaRepository $tajemnicaRepo,
-        private RozaniecConfigRepository $configRepo,
+        private UczestnikRepository $uczestnikRepo,
     ) {
     }
 
     /**
-     * Sprawdza czy potrzebna rotacja, jeśli tak — wykonuje (lazy, raz na miesiąc).
+     * Sprawdza czy potrzebna rotacja dla danej róży, jeśli tak — wykonuje.
+     *
+     * @return bool true jeśli wykonano rotację
      */
-    public function ensureRotated(): void
+    public function ensureRotated(Roza $roza): bool
     {
-        $ostatnia = $this->configRepo->get('ostatnia_rotacja');
+        $ostatnia = $roza->getOstatniaRotacja();
 
         $now = new \DateTimeImmutable();
         $currentMonth = $now->format('Y-m');
 
-        // Pierwsze uruchomienie — ustaw na bieżący miesiąc
         if ($ostatnia === null) {
-            $this->configRepo->set('ostatnia_rotacja', $currentMonth);
-            return;
+            $roza->setOstatniaRotacja($currentMonth);
+            $this->em->flush();
+            return false;
         }
 
-        // Oblicz różnicę miesięcy
         $ostatniaDate = \DateTimeImmutable::createFromFormat('Y-m', $ostatnia);
         if ($ostatniaDate === false) {
-            $this->configRepo->set('ostatnia_rotacja', $currentMonth);
-            return;
+            $roza->setOstatniaRotacja($currentMonth);
+            $this->em->flush();
+            return false;
         }
 
         $monthsDiff = ($now->format('Y') - $ostatniaDate->format('Y')) * 12
             + ($now->format('n') - $ostatniaDate->format('n'));
 
         if ($monthsDiff <= 0) {
-            return; // Bez zmian — ten sam miesiąc
+            return false;
         }
 
         $steps = $monthsDiff % 20;
         if ($steps > 0) {
-            $this->rotate($steps);
+            $this->rotate($roza, $steps);
         }
 
-        $this->configRepo->set('ostatnia_rotacja', $currentMonth);
+        $roza->setOstatniaRotacja($currentMonth);
+        $this->em->flush();
+        return true;
     }
 
     /**
-     * Przesuwa userów o N pozycji cyklicznie w obrębie 20 tajemnic.
+     * Przesuwa uczestników róży o N pozycji cyklicznie w obrębie 20 tajemnic.
      */
-    private function rotate(int $steps): void
+    public function rotate(Roza $roza, int $steps): void
     {
-        $tajemnice = $this->tajemnicaRepo->findAllOrdered();
+        $uczestnicy = $this->uczestnikRepo->findAssignedByRoza($roza);
 
-        if (count($tajemnice) === 0) {
+        if (count($uczestnicy) === 0) {
             return;
         }
 
-        $total = count($tajemnice);
+        $total = 20;
 
-        // Zbierz obecne przypisania: pozycja → user
-        $userByPozycja = [];
-        foreach ($tajemnice as $t) {
-            $userByPozycja[$t->getPozycja()] = $t->getUser();
+        // Normalizuj kroki
+        $steps = (($steps % $total) + $total) % $total;
+        if ($steps === 0) {
+            return;
         }
 
-        // Przesuń: user z pozycji P idzie do pozycji ((P + steps - 1) % total) + 1
-        $newAssignments = [];
-        foreach ($userByPozycja as $pozycja => $user) {
-            $newPozycja = (($pozycja - 1 + $steps) % $total) + 1;
-            $newAssignments[$newPozycja] = $user;
-        }
-
-        // Zastosuj nowe przypisania
-        foreach ($tajemnice as $t) {
-            $t->setUser($newAssignments[$t->getPozycja()] ?? null);
+        // Przesuń: uczestnik z pozycji P idzie do pozycji ((P + steps - 1) % total) + 1
+        foreach ($uczestnicy as $uczestnik) {
+            $staraPozycja = $uczestnik->getPozycja();
+            $nowaPozycja = (($staraPozycja - 1 + $steps) % $total) + 1;
+            $uczestnik->setPozycja($nowaPozycja);
         }
 
         $this->em->flush();
     }
 
     /**
-     * Zwraca wszystkie tajemnice z aktualnymi przypisaniami (po rotacji).
+     * Zwraca pary [uczestnik, tajemnica] na podstawie dopasowania pozycji.
      *
+     * @return array<int, array{uczestnik: Uczestnik, tajemnica: Tajemnica}>
+     */
+    public function getUczestnicyWithTajemnice(Roza $roza): array
+    {
+        $tajemnice = $this->tajemnicaRepo->findAllOrdered();
+        $uczestnicy = $this->uczestnikRepo->findAssignedByRoza($roza);
+
+        // Indeksuj uczestników po pozycji
+        $uczByPozycja = [];
+        foreach ($uczestnicy as $u) {
+            $uczByPozycja[$u->getPozycja()] = $u;
+        }
+
+        $result = [];
+        foreach ($tajemnice as $tajemnica) {
+            $poz = $tajemnica->getPozycja();
+            $result[$poz] = [
+                'uczestnik' => $uczByPozycja[$poz] ?? null,
+                'tajemnica' => $tajemnica,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * @return Tajemnica[]
      */
     public function getTajemnice(): array

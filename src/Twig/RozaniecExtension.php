@@ -2,6 +2,7 @@
 
 namespace Rozaniec\RozaniecBundle\Twig;
 
+use Rozaniec\RozaniecBundle\Repository\RozaniecConfigRepository;
 use Rozaniec\RozaniecBundle\Service\RozaniecUserResolver;
 use Twig\Extension\AbstractExtension;
 use Twig\Extension\GlobalsInterface;
@@ -12,6 +13,7 @@ class RozaniecExtension extends AbstractExtension implements GlobalsInterface
     public function __construct(
         private string $baseTemplate,
         private RozaniecUserResolver $resolver,
+        private RozaniecConfigRepository $configRepo,
     ) {
     }
 
@@ -26,11 +28,17 @@ class RozaniecExtension extends AbstractExtension implements GlobalsInterface
     {
         return [
             new TwigFunction('rozaniec_name', [$this, 'getUserName']),
+            new TwigFunction('rozaniec_config', [$this, 'getConfig']),
         ];
     }
 
     public function getUserName(object $user): string
     {
         return $this->resolver->getFullName($user);
+    }
+
+    public function getConfig(string $klucz): ?string
+    {
+        return $this->configRepo->get($klucz);
     }
 }

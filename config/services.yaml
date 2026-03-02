@@ -5,7 +5,7 @@ services:
 
     Rozaniec\RozaniecBundle\:
         resource: '../src/'
-        exclude: '../src/{Entity,Model}'
+        exclude: '../src/{Entity,Model,Notification}'
 
     Rozaniec\RozaniecBundle\Controller\:
         resource: '../src/Controller/'
@@ -21,6 +21,9 @@ services:
         arguments:
             $fullNameFields: '%rozaniec.user_full_name_fields%'
 
-    Rozaniec\RozaniecBundle\Command\RozaniecInstallCommand:
+    Rozaniec\RozaniecBundle\Command\RozaniecMigrateCommand:
         arguments:
-            $startDate: '%rozaniec.start_date%'
+            $userClass: '%rozaniec.user_class%'
+
+    Rozaniec\RozaniecBundle\Sms\SerwerSmsTransportFactory:
+        tags: ['texter.transport_factory']

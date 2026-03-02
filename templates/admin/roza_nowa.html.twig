@@ -1,0 +1,45 @@
+{% extends rozaniec_base_template %}
+
+{% block title %}Nowa róża — Administracja{% endblock %}
+{% block page_pretitle %}Żywy Różaniec{% endblock %}
+{% block page_title %}Utwórz nową różę{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ path('rozaniec_admin') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="ti ti-arrow-left me-1"></i> Wróć do listy
+    </a>
+{% endblock %}
+
+{% block body %}
+    {% for message in app.flashes('danger') %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="ti ti-rosette me-2"></i>Nowa róża</h3>
+        </div>
+        <form method="post" action="{{ path('rozaniec_admin_roza_create') }}">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label" for="roza-nazwa">Nazwa róży</label>
+                    <input type="text" id="roza-nazwa" name="nazwa" class="form-control" required
+                           placeholder='np. "Róża św. Teresy", "Róża Mężczyzn parafii X"'
+                           autofocus>
+                    <div class="form-hint">
+                        Nazwa identyfikuje grupę różańcową. Może to być patron, parafia, grupa itp.
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <a href="{{ path('rozaniec_admin') }}" class="btn btn-ghost-secondary me-2">Anuluj</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-plus me-1"></i> Utwórz różę
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

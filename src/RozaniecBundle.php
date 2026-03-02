@@ -19,17 +19,13 @@ class RozaniecBundle extends AbstractBundle
                     ->info('FQCN klasy User (np. App\\Entity\\User)')
                 ->end()
                 ->scalarNode('base_template')
-                    ->defaultValue('base.html.twig')
+                    ->defaultValue('@Rozaniec/base_rozaniec.html.twig')
                     ->info('Bazowy szablon Twig, który rozszerzają szablony bundla')
                 ->end()
                 ->arrayNode('user_full_name_fields')
                     ->defaultValue(['firstName', 'lastName'])
                     ->scalarPrototype()->end()
                     ->info('Nazwy pól User, z których złożyć pełne imię i nazwisko')
-                ->end()
-                ->scalarNode('start_date')
-                    ->defaultValue('2019-04-01')
-                    ->info('Data startu rotacji różańca (YYYY-MM-DD)')
                 ->end()
             ->end();
     }
@@ -83,7 +79,6 @@ YAML
         $container->parameters()
             ->set('rozaniec.base_template', $config['base_template'])
             ->set('rozaniec.user_class', $config['user_class'])
-            ->set('rozaniec.user_full_name_fields', $config['user_full_name_fields'])
-            ->set('rozaniec.start_date', $config['start_date']);
+            ->set('rozaniec.user_full_name_fields', $config['user_full_name_fields']);
     }
 }

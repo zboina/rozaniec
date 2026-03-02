@@ -1,0 +1,146 @@
+{% extends rozaniec_base_template %}
+
+{% block title %}Żywy Różaniec{% endblock %}
+{% block page_pretitle %}Wspólnota modlitewna{% endblock %}
+{% block page_title %}Żywy Różaniec{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .rozaniec-hero {
+        background: linear-gradient(135deg, #1a1c3d 0%, #2d1b4e 50%, #1a1c3d 100%);
+        border-radius: 8px;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .rozaniec-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle at 30% 40%, rgba(212,175,55,0.08) 0%, transparent 50%),
+                    radial-gradient(circle at 70% 60%, rgba(212,175,55,0.05) 0%, transparent 40%);
+        pointer-events: none;
+    }
+    .rozaniec-hero .hero-content { position: relative; z-index: 1; }
+    .moja-tajemnica-card {
+        border-left: 4px solid #d4af37;
+        background: linear-gradient(135deg, #fffef5 0%, #fff9e6 100%);
+    }
+    .roza-card { transition: transform 0.15s ease; }
+    .roza-card:hover { transform: translateY(-2px); }
+    .stat-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+</style>
+{% endblock %}
+
+{% block body %}
+    {% for message in app.flashes('danger') %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <div class="d-flex"><div>{{ message }}</div></div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+        </div>
+    {% endfor %}
+
+    {# ===== HERO ===== #}
+    <div class="rozaniec-hero p-4 mb-4">
+        <div class="hero-content">
+            <h1 class="mb-2" style="font-size: 1.75rem; font-weight: 300; letter-spacing: 0.5px;">
+                Żywy <strong>Różaniec</strong>
+            </h1>
+            <p class="mb-0" style="opacity: 0.7; font-size: 0.95rem;">
+                {{ "now"|date("F Y") }} &middot;
+                {% if rozaData|length > 0 %}
+                    Uczestniczysz w {{ rozaData|length }} {{ rozaData|length == 1 ? 'róży' : 'różach' }}
+                {% else %}
+                    Nie jesteś jeszcze członkiem żadnej róży
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {# ===== MOJE RÓŻE ===== #}
+    {% if rozaData|length > 0 %}
+        <h3 class="mb-3"><i class="ti ti-rosette me-2"></i>Moje Róże</h3>
+        <div class="row row-cards mb-4">
+            {% for data in rozaData %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card roza-card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-rosette me-1 text-primary"></i>
+                                {{ data.roza.nazwa }}
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            {% if data.mojaTajemnica %}
+                                <div class="moja-tajemnica-card p-3 rounded mb-3">
+                                    <div class="text-secondary" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Twoja tajemnica</div>
+                                    <div style="font-size: 1.05rem; font-weight: 600; color: #1a1c3d;">
+                                        {{ data.mojaTajemnica.kolejnosc.numer }}. {{ data.mojaTajemnica.nazwa }}
+                                    </div>
+                                    <div class="text-secondary" style="font-size: 0.8rem;">{{ data.mojaTajemnica.czesc.nazwa }}</div>
+                                </div>
+                            {% elseif data.uczestnik.pozycja is null %}
+                                <div class="alert alert-info mb-3 py-2">
+                                    <i class="ti ti-info-circle me-1"></i> Nie masz jeszcze przypisanej pozycji.
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <a href="{{ path('rozaniec_roza_show', {id: data.roza.id}) }}" class="btn btn-primary btn-sm">
+                                <i class="ti ti-eye me-1"></i> Zobacz różę
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card mb-4" style="border-left: 4px solid #74c0fc;">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-azure-lt">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; color: #1a1c3d;">Nie jesteś jeszcze w żadnej róży</div>
+                        <div class="text-secondary" style="font-size: 0.85rem;">Skontaktuj się z administratorem, aby zostać dodanym do grupy różańcowej.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ===== ADMIN LINK ===== #}
+    {% if is_granted('ROLE_ADMIN') %}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="ti ti-settings me-2"></i>Administracja</h3>
+            </div>
+            <div class="card-body">
+                <a href="{{ path('rozaniec_admin') }}" class="btn btn-outline-primary">
+                    <i class="ti ti-settings me-1"></i> Panel administracyjny
+                </a>
+            </div>
+            {% if wszystkieRoze|length > 0 %}
+                <div class="card-footer">
+                    <span class="text-secondary">Wszystkie róże: </span>
+                    {% for r in wszystkieRoze %}
+                        <a href="{{ path('rozaniec_admin_roza', {id: r.id}) }}" class="badge bg-primary-lt me-1">{{ r.nazwa }}</a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

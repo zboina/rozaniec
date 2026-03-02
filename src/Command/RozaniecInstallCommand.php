@@ -6,7 +6,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Rozaniec\RozaniecBundle\Entity\Czesc;
 use Rozaniec\RozaniecBundle\Entity\Kolejnosc;
 use Rozaniec\RozaniecBundle\Entity\Tajemnica;
-use Rozaniec\RozaniecBundle\Repository\RozaniecConfigRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'rozaniec:install',
-    description: 'Instaluje dane początkowe: części, kolejności, tajemnice i konfigurację',
+    description: 'Instaluje dane referencyjne: części, kolejności i 20 tajemnic różańcowych',
 )]
 class RozaniecInstallCommand extends Command
 {
@@ -53,8 +52,6 @@ class RozaniecInstallCommand extends Command
 
     public function __construct(
         private EntityManagerInterface $em,
-        private RozaniecConfigRepository $configRepo,
-        private string $startDate,
     ) {
         parent::__construct();
     }
@@ -69,7 +66,6 @@ class RozaniecInstallCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $force = $input->getOption('force');
 
-        // Sprawdź czy dane już istnieją
         $existingCount = $this->em->getRepository(Tajemnica::class)->count([]);
         if ($existingCount > 0 && !$force) {
             $io->warning('Dane już istnieją (' . $existingCount . ' tajemnic). Użyj --force aby nadpisać.');
@@ -115,13 +111,10 @@ class RozaniecInstallCommand extends Command
             }
         }
 
-        // Konfiguracja
         $this->em->flush();
-        $this->configRepo->set('start_date', $this->startDate);
-        $this->configRepo->set('ostatnia_rotacja', (new \DateTimeImmutable())->format('Y-m'));
 
-        $io->success('Utworzono 4 części i 20 tajemnic.');
-        $io->success('Konfiguracja: start_date=' . $this->startDate . ', ostatnia_rotacja=' . (new \DateTimeImmutable())->format('Y-m'));
+        $io->success('Utworzono 4 części i 20 tajemnic (dane referencyjne).');
+        $io->note('Aby rozpocząć, utwórz nową różę w panelu administracyjnym lub użyj komendy rozaniec:migrate-to-multi.');
 
         return Command::SUCCESS;
     }
