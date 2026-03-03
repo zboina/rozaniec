@@ -22,6 +22,12 @@ class Roza
     #[ORM\Column(length: 7, nullable: true)]
     private ?string $ostatniaRotacja = null;
 
+    #[ORM\Column(length: 20, options: ['default' => 'pierwszy_dzien'])]
+    private string $rotacjaTryb = 'pierwszy_dzien';
+
+    #[ORM\Column(type: 'smallint', nullable: true)]
+    private ?int $rotacjaDzien = null;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
@@ -59,6 +65,28 @@ class Roza
     public function setOstatniaRotacja(?string $ostatniaRotacja): static
     {
         $this->ostatniaRotacja = $ostatniaRotacja;
+        return $this;
+    }
+
+    public function getRotacjaTryb(): string
+    {
+        return $this->rotacjaTryb;
+    }
+
+    public function setRotacjaTryb(string $rotacjaTryb): static
+    {
+        $this->rotacjaTryb = $rotacjaTryb;
+        return $this;
+    }
+
+    public function getRotacjaDzien(): ?int
+    {
+        return $this->rotacjaDzien;
+    }
+
+    public function setRotacjaDzien(?int $rotacjaDzien): static
+    {
+        $this->rotacjaDzien = $rotacjaDzien;
         return $this;
     }
 

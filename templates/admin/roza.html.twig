@@ -432,6 +432,44 @@
                 {# ==================== TAB: ROTACJA ==================== #}
                 <div class="tab-pane" id="tab-rotacja" role="tabpanel">
                     <div class="p-3">
+                        {# --- Tryb automatycznej rotacji --- #}
+                        <div class="mb-4 pb-3 border-bottom">
+                            <h4 class="mb-3"><i class="ti ti-calendar-event me-1"></i> Tryb automatycznej rotacji</h4>
+                            <form method="post" action="{{ path('rozaniec_admin_rotacja_tryb', {id: roza.id}) }}" class="d-flex align-items-end gap-3">
+                                <div>
+                                    <label class="form-label">Kiedy wykonywać rotację</label>
+                                    <select name="rotacja_tryb" class="form-select" style="width: 280px;" id="rotacja-tryb-select"
+                                            onchange="document.getElementById('rotacja-dzien-box').style.display = this.value === 'wybrany_dzien' ? '' : 'none';">
+                                        <option value="pierwszy_dzien" {% if roza.rotacjaTryb == 'pierwszy_dzien' %}selected{% endif %}>
+                                            1. dzień miesiąca
+                                        </option>
+                                        <option value="pierwsza_niedziela" {% if roza.rotacjaTryb == 'pierwsza_niedziela' %}selected{% endif %}>
+                                            1. niedziela miesiąca
+                                        </option>
+                                        <option value="wybrany_dzien" {% if roza.rotacjaTryb == 'wybrany_dzien' %}selected{% endif %}>
+                                            Wybrany dzień miesiąca
+                                        </option>
+                                    </select>
+                                </div>
+                                <div id="rotacja-dzien-box" style="{% if roza.rotacjaTryb != 'wybrany_dzien' %}display: none;{% endif %}">
+                                    <label class="form-label">Dzień (1–31)</label>
+                                    <input type="number" name="rotacja_dzien" class="form-control" style="width: 90px;"
+                                           value="{{ roza.rotacjaDzien ?? 1 }}" min="1" max="31">
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="ti ti-device-floppy me-1"></i> Zapisz
+                                    </button>
+                                </div>
+                                <div class="text-secondary" style="font-size: 0.85rem;">
+                                    <i class="ti ti-info-circle me-1"></i>
+                                    Rotacja jest uruchamiana automatycznie przez cron (<code>rozaniec:rotacja</code>).
+                                </div>
+                            </form>
+                        </div>
+
+                        {# --- Ręczna rotacja --- #}
+                        <h4 class="mb-3"><i class="ti ti-rotate me-1"></i> Ręczna rotacja</h4>
                         <div class="row align-items-end">
                             <div class="col-auto">
                                 <form method="post" action="{{ path('rozaniec_admin_rotacja', {id: roza.id}) }}" class="d-flex align-items-end gap-3"
@@ -460,8 +498,7 @@
                                 <div class="text-secondary" style="font-size: 0.85rem;">
                                     <i class="ti ti-info-circle me-1"></i>
                                     <strong>Do przodu</strong> = jak przy normalnej miesięcznej rotacji.<br>
-                                    <strong>Do tyłu</strong> = cofnięcie rotacji.<br>
-                                    Automatyczna rotacja następuje 1. dnia każdego miesiąca.
+                                    <strong>Do tyłu</strong> = cofnięcie rotacji.
                                 </div>
                             </div>
                         </div>

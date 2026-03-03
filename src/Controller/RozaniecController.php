@@ -410,6 +410,45 @@ class RozaniecController extends AbstractController
     }
 
     /**
+     * Admin — zapisz tryb automatycznej rotacji.
+     */
+    #[Route('/admin/roza/{id}/rotacja-tryb', name: 'rozaniec_admin_rotacja_tryb', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function adminSaveRotacjaTryb(Roza $roza, Request $request): Response
+    {
+        $tryb = $request->request->get('rotacja_tryb', 'pierwszy_dzien');
+
+        if (!in_array($tryb, ['pierwszy_dzien', 'pierwsza_niedziela', 'wybrany_dzien'], true)) {
+            $this->addFlash('danger', 'Nieprawidłowy tryb rotacji.');
+            return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+        }
+
+        $roza->setRotacjaTryb($tryb);
+
+        if ($tryb === 'wybrany_dzien') {
+            $dzien = (int) $request->request->get('rotacja_dzien', 1);
+            if ($dzien < 1 || $dzien > 31) {
+                $this->addFlash('danger', 'Dzień musi być między 1 a 31.');
+                return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+            }
+            $roza->setRotacjaDzien($dzien);
+        } else {
+            $roza->setRotacjaDzien(null);
+        }
+
+        $this->em->flush();
+
+        $label = match ($tryb) {
+            'pierwsza_niedziela' => '1. niedziela miesiąca',
+            'wybrany_dzien' => $roza->getRotacjaDzien() . '. dzień miesiąca',
+            default => '1. dzień miesiąca',
+        };
+        $this->addFlash('success', 'Tryb rotacji zmieniony na: ' . $label . '.');
+
+        return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+    }
+
+    /**
      * Admin — ręczna rotacja per róża.
      */
     #[Route('/admin/roza/{id}/rotacja', name: 'rozaniec_admin_rotacja', methods: ['POST'])]
