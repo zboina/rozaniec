@@ -20,6 +20,7 @@ class RotacjaNotification extends Notification implements EmailNotificationInter
         private string $miesiac,
         private string $rozaNazwa = 'Żywy Różaniec',
         private int $kolejnosc = 0,
+        private string $emailFrom = 'rozaniec@localhost',
     ) {
         parent::__construct($this->rozaNazwa . ' — nowa tajemnica');
         $this->importance(Notification::IMPORTANCE_HIGH);
@@ -28,6 +29,7 @@ class RotacjaNotification extends Notification implements EmailNotificationInter
     public function asEmailMessage(EmailRecipientInterface $recipient, ?string $transport = null): ?EmailMessage
     {
         $email = (new TemplatedEmail())
+            ->from($this->emailFrom)
             ->to($recipient->getEmail())
             ->subject($this->rozaNazwa . ' — Twoja tajemnica na ' . $this->miesiac)
             ->htmlTemplate('@Rozaniec/notification/rotacja_email.html.twig')

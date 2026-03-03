@@ -20,6 +20,7 @@ class RozaniecNotifier
         private NotifierInterface $notifier,
         private RozaniecConfigRepository $configRepo,
         private RotacjaService $rotacjaService,
+        private string $emailFrom = 'rozaniec@localhost',
         private ?LoggerInterface $logger = null,
     ) {
     }
@@ -107,7 +108,7 @@ class RozaniecNotifier
 
         // Email — przez Symfony Notifier
         if (in_array('email', $effectiveChannels) && $uczestnik->getEmail()) {
-            $notification = new RotacjaNotification($tajemnicaNazwa, $czescNazwa, $uczestnik->getFullName(), $miesiac, $rozaNazwa, $kolejnosc);
+            $notification = new RotacjaNotification($tajemnicaNazwa, $czescNazwa, $uczestnik->getFullName(), $miesiac, $rozaNazwa, $kolejnosc, $this->emailFrom);
             $recipient = new Recipient($uczestnik->getEmail(), '');
             try {
                 $this->notifier->send($notification, $recipient);

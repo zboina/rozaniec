@@ -22,6 +22,10 @@ class RozaniecBundle extends AbstractBundle
                     ->defaultValue('@Rozaniec/base_rozaniec.html.twig')
                     ->info('Bazowy szablon Twig, który rozszerzają szablony bundla')
                 ->end()
+                ->scalarNode('email_from')
+                    ->defaultValue('rozaniec@localhost')
+                    ->info('Adres nadawcy emaili (np. rozaniec@twojadomena.pl)')
+                ->end()
                 ->arrayNode('user_full_name_fields')
                     ->defaultValue(['firstName', 'lastName'])
                     ->scalarPrototype()->end()
@@ -79,6 +83,7 @@ YAML
         $container->parameters()
             ->set('rozaniec.base_template', $config['base_template'])
             ->set('rozaniec.user_class', $config['user_class'])
-            ->set('rozaniec.user_full_name_fields', $config['user_full_name_fields']);
+            ->set('rozaniec.user_full_name_fields', $config['user_full_name_fields'])
+            ->set('rozaniec.email_from', $config['email_from']);
     }
 }

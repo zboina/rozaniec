@@ -17,6 +17,10 @@ services:
             $resolver: '@Rozaniec\RozaniecBundle\Service\RozaniecUserResolver'
         tags: ['twig.extension']
 
+    Rozaniec\RozaniecBundle\Service\RozaniecNotifier:
+        arguments:
+            $emailFrom: '%rozaniec.email_from%'
+
     Rozaniec\RozaniecBundle\Service\RozaniecUserResolver:
         arguments:
             $fullNameFields: '%rozaniec.user_full_name_fields%'
