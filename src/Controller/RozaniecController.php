@@ -841,6 +841,36 @@ class RozaniecController extends AbstractController
         return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
     }
 
+    /**
+     * Admin — zapisz zelatora róży.
+     */
+    #[Route('/admin/roza/{id}/zelator', name: 'rozaniec_admin_save_zelator', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function adminSaveZelator(Roza $roza, Request $request): Response
+    {
+        $zelatorId = $request->request->get('zelator_id');
+
+        if ($zelatorId === '' || $zelatorId === null || $zelatorId === '0') {
+            $roza->setZelator(null);
+            $this->em->flush();
+            $this->addFlash('success', 'Zelator został usunięty z róży.');
+            return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+        }
+
+        $uczestnik = $this->uczestnikRepo->find((int) $zelatorId);
+        if (!$uczestnik || $uczestnik->getRoza()->getId() !== $roza->getId()) {
+            $this->addFlash('danger', 'Wybrany uczestnik nie należy do tej róży.');
+            return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+        }
+
+        $roza->setZelator($uczestnik);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Zelator róży: ' . $uczestnik->getFullName() . '.');
+
+        return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+    }
+
     // ========== HELPERS ==========
 
     private function resolveFirstName(object $user): string

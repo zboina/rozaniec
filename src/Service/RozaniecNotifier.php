@@ -169,6 +169,53 @@ class RozaniecNotifier
         return $channels;
     }
 
+    /**
+     * Wysyła SMS-przypomnienie do zelatora róży o jutrzejszej wymianie tajemnic.
+     * Zwraca true jeśli SMS został wysłany.
+     */
+    public function notifyZelatorReminder(Roza $roza): bool
+    {
+        $zelator = $roza->getZelator();
+        if (!$zelator || !$zelator->getTelefon()) {
+            return false;
+        }
+
+        $token = $this->getSmsToken();
+        if (!$token) {
+            $this->logger?->warning('Rozaniec: brak tokenu SERWERSMS_DSN, SMS przypomnienia zelatora nie wysłany dla róży #{id}', [
+                'id' => $roza->getId(),
+            ]);
+            return false;
+        }
+
+        $text = sprintf(
+            '%s: Przypomnienie — jutro (niedziela) wymiana tajemnic różańcowych.',
+            $roza->getNazwa(),
+        );
+
+        try {
+            $api = new SerwerSMS($token);
+            $result = $api->messages->sendSms($zelator->getTelefon(), $text, null, ['details' => true, 'utf' => true]);
+
+            if (empty($result->success)) {
+                $error = $result->error ?? $result->message ?? json_encode($result);
+                $this->logger?->error('Rozaniec: SMS przypomnienia zelatora dla róży #{rozaId} odrzucony: {error}', [
+                    'rozaId' => $roza->getId(),
+                    'error' => is_string($error) ? $error : json_encode($error),
+                ]);
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->logger?->error('Rozaniec: błąd SMS przypomnienia zelatora dla róży #{rozaId}: {error}', [
+                'rozaId' => $roza->getId(),
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
     public function isEnabled(): bool
     {
         return $this->configRepo->get('notify_enabled') !== '0';

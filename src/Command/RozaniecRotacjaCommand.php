@@ -110,6 +110,41 @@ class RozaniecRotacjaCommand extends Command
             $io->success('Gotowe. Rotacji wykonanych: ' . $rotated . '.');
         }
 
+        // ===== PRZYPOMNIENIE ZELATORA =====
+        $tomorrow = $now->modify('+1 day');
+        $tomorrowDay = (int) $tomorrow->format('j');
+        $tomorrowDow = (int) $tomorrow->format('N'); // 7=niedziela
+
+        $isFirstSunday = ($tomorrowDow === 7 && $tomorrowDay <= 7);
+
+        if ($isFirstSunday) {
+            $io->section('Przypomnienie zelatora (jutro = 1. niedziela)');
+
+            $zelatorRows = [];
+            foreach ($roze as $roza) {
+                $zelator = $roza->getZelator();
+                if (!$zelator) {
+                    $zelatorRows[] = [$roza->getNazwa(), '—', '—', '<comment>brak zelatora</comment>'];
+                    continue;
+                }
+
+                $phone = $zelator->getTelefon();
+                if (!$phone) {
+                    $zelatorRows[] = [$roza->getNazwa(), $zelator->getFullName(), '—', '<comment>brak telefonu</comment>'];
+                    continue;
+                }
+
+                if ($dryRun) {
+                    $zelatorRows[] = [$roza->getNazwa(), $zelator->getFullName(), $phone, '<info>SMS (dry-run)</info>'];
+                } else {
+                    $sent = $this->rozaniecNotifier->notifyZelatorReminder($roza);
+                    $zelatorRows[] = [$roza->getNazwa(), $zelator->getFullName(), $phone, $sent ? '<info>SMS wysłany</info>' : '<error>błąd wysyłki</error>'];
+                }
+            }
+
+            $io->table(['Róża', 'Zelator', 'Telefon', 'Status'], $zelatorRows);
+        }
+
         return Command::SUCCESS;
     }
 }

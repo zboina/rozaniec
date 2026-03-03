@@ -31,6 +31,10 @@ class Roza
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\ManyToOne(targetEntity: Uczestnik::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Uczestnik $zelator = null;
+
     /** @var Collection<int, Uczestnik> */
     #[ORM\OneToMany(targetEntity: Uczestnik::class, mappedBy: 'roza', orphanRemoval: true)]
     private Collection $uczestnicy;
@@ -117,6 +121,17 @@ class Roza
                 $uczestnik->setRoza(null);
             }
         }
+        return $this;
+    }
+
+    public function getZelator(): ?Uczestnik
+    {
+        return $this->zelator;
+    }
+
+    public function setZelator(?Uczestnik $zelator): static
+    {
+        $this->zelator = $zelator;
         return $this;
     }
 
