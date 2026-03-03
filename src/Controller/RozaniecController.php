@@ -267,6 +267,41 @@ class RozaniecController extends AbstractController
     }
 
     /**
+     * Admin — edycja nazwy róży.
+     */
+    #[Route('/admin/roza/{id}/edit', name: 'rozaniec_admin_roza_edit', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function adminRozaEdit(Roza $roza, Request $request): Response
+    {
+        $nazwa = trim($request->request->get('nazwa', ''));
+        if ($nazwa === '') {
+            $this->addFlash('danger', 'Nazwa róży nie może być pusta.');
+            return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+        }
+
+        $roza->setNazwa($nazwa);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Nazwa zmieniona na: ' . $nazwa . '.');
+        return $this->redirectToRoute('rozaniec_admin_roza', ['id' => $roza->getId()]);
+    }
+
+    /**
+     * Admin — usunięcie róży.
+     */
+    #[Route('/admin/roza/{id}/usun', name: 'rozaniec_admin_roza_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function adminRozaDelete(Roza $roza): Response
+    {
+        $nazwa = $roza->getNazwa();
+        $this->em->remove($roza);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Róża "' . $nazwa . '" została usunięta.');
+        return $this->redirectToRoute('rozaniec_admin');
+    }
+
+    /**
      * Admin — zarządzanie jedną różą.
      */
     #[Route('/admin/roza/{id}', name: 'rozaniec_admin_roza')]

@@ -2,7 +2,22 @@
 
 {% block title %}{{ roza.nazwa }} — Administracja{% endblock %}
 {% block page_pretitle %}Żywy Różaniec{% endblock %}
-{% block page_title %}{{ roza.nazwa }}{% endblock %}
+{% block page_title %}
+    <span id="roza-nazwa-display">
+        {{ roza.nazwa }}
+        <a href="#" class="text-muted ms-1" style="font-size: 0.6em; vertical-align: middle;"
+           onclick="event.preventDefault(); document.getElementById('roza-nazwa-display').style.display='none'; document.getElementById('roza-nazwa-edit').style.display='flex';"
+           title="Zmień nazwę"><i class="ti ti-pencil"></i></a>
+    </span>
+    <form method="post" action="{{ path('rozaniec_admin_roza_edit', {id: roza.id}) }}" id="roza-nazwa-edit" class="d-none align-items-center gap-2" style="display:none;">
+        <input type="text" name="nazwa" value="{{ roza.nazwa }}" class="form-control form-control-sm" style="width: 300px; font-size: 1rem;" required>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="ti ti-check"></i></button>
+        <a href="#" class="btn btn-outline-secondary btn-sm"
+           onclick="event.preventDefault(); document.getElementById('roza-nazwa-edit').style.display='none'; document.getElementById('roza-nazwa-display').style.display='';">
+            <i class="ti ti-x"></i>
+        </a>
+    </form>
+{% endblock %}
 
 {% block page_actions %}
     <a href="{{ path('rozaniec_admin') }}" class="btn btn-outline-secondary btn-sm">
@@ -17,6 +32,12 @@
     <a href="{{ path('rozaniec_admin_pdf_zelator', {id: roza.id}) }}" class="btn btn-outline-danger btn-sm ms-1" target="_blank">
         <i class="ti ti-file-type-pdf me-1"></i> Wymiana (zelator)
     </a>
+    <form method="post" action="{{ path('rozaniec_admin_roza_delete', {id: roza.id}) }}" class="d-inline ms-2">
+        <button type="submit" class="btn btn-outline-danger btn-sm"
+                onclick="return confirm('Na pewno usunąć różę „{{ roza.nazwa }}" i wszystkich uczestników?')">
+            <i class="ti ti-trash me-1"></i> Usuń różę
+        </button>
+    </form>
 {% endblock %}
 
 {% block body %}
