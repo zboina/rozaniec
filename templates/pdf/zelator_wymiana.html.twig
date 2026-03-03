@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { margin: 15mm 12mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 10pt;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #6c3483;
+        }
+        .header h1 {
+            font-size: 15pt;
+            color: #6c3483;
+            margin-bottom: 2px;
+        }
+        .header .sub {
+            font-size: 9pt;
+            color: #666;
+        }
+
+        .info-box {
+            background: #f5eef8;
+            border: 1px solid #d2b4de;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-size: 9pt;
+        }
+        .info-box strong { color: #6c3483; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+        }
+        th {
+            background: #6c3483;
+            color: #fff;
+            font-weight: bold;
+            font-size: 9pt;
+            text-align: left;
+            padding: 5px 6px;
+        }
+        td {
+            padding: 4px 6px;
+            border-bottom: 1px solid #ddd;
+            vertical-align: middle;
+            font-size: 9pt;
+        }
+        tr:nth-child(even) td { background: #fafafa; }
+
+        .poz { text-align: center; width: 30px; font-weight: bold; color: #6c3483; }
+        .arrow { text-align: center; width: 25px; color: #6c3483; font-weight: bold; font-size: 12pt; }
+        .uczestnik { width: 22%; }
+        .taj-prev { width: 25%; }
+        .taj-new { width: 25%; font-weight: bold; }
+        .uczestnik-empty { color: #999; font-style: italic; }
+
+        .czesc-label {
+            display: inline-block;
+            font-size: 7pt;
+            padding: 1px 4px;
+            border-radius: 2px;
+            color: #fff;
+            margin-right: 3px;
+            vertical-align: middle;
+        }
+        .czesc-radosne { background: #d4ac0d; color: #333; }
+        .czesc-swiatla { background: #2e86c1; }
+        .czesc-bolesne { background: #c0392b; }
+        .czesc-chwalebne { background: #27ae60; }
+
+        .footer {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 8pt;
+            color: #999;
+            border-top: 1px solid #ddd;
+            padding-top: 5px;
+        }
+
+        .note {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #fef9e7;
+            border: 1px solid #f9e79f;
+            border-radius: 4px;
+            font-size: 8.5pt;
+            color: #7d6608;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ roza.nazwa }} — Wymiana tajemnic</h1>
+        <div class="sub">Raport dla zelatora — {{ miesiac }}</div>
+    </div>
+
+    <div class="info-box">
+        {% if roza.zelator %}
+            Zelator: <strong>{{ roza.zelator.fullName }}</strong>
+            {% if roza.zelator.telefon %} &middot; {{ roza.zelator.telefon }}{% endif %}
+        {% endif %}
+        &nbsp;&middot;&nbsp; Uczestników: <strong>{{ assignedCount }}</strong> / {{ totalCount }}
+    </div>
+
+    <table>
+        <tr>
+            <th class="poz">Poz.</th>
+            <th class="uczestnik">Uczestnik</th>
+            <th class="taj-prev">Poprzednia tajemnica</th>
+            <th class="arrow"></th>
+            <th class="taj-new">Nowa tajemnica</th>
+        </tr>
+        {% for item in wymiana %}
+            <tr>
+                <td class="poz">{{ item.pozycja }}</td>
+                <td class="uczestnik {% if not item.uczestnik %}uczestnik-empty{% endif %}">
+                    {% if item.uczestnik %}
+                        {{ item.uczestnik.fullName }}
+                    {% else %}
+                        — wolne —
+                    {% endif %}
+                </td>
+                <td class="taj-prev">
+                    {% if item.prev %}
+                        {% set czClass = '' %}
+                        {% set czLabel = '' %}
+                        {% if 'Radosne' in item.prev.czesc.nazwa %}{% set czClass = 'czesc-radosne' %}{% set czLabel = 'R' %}
+                        {% elseif 'Światła' in item.prev.czesc.nazwa %}{% set czClass = 'czesc-swiatla' %}{% set czLabel = 'Ś' %}
+                        {% elseif 'Bolesne' in item.prev.czesc.nazwa %}{% set czClass = 'czesc-bolesne' %}{% set czLabel = 'B' %}
+                        {% elseif 'Chwalebne' in item.prev.czesc.nazwa %}{% set czClass = 'czesc-chwalebne' %}{% set czLabel = 'Ch' %}
+                        {% endif %}
+                        <span class="czesc-label {{ czClass }}">{{ czLabel }}</span>
+                        {{ item.prev.kolejnosc.numer }}. {{ item.prev.nazwa }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="arrow">&rarr;</td>
+                <td class="taj-new">
+                    {% if item.new %}
+                        {% set czClass = '' %}
+                        {% set czLabel = '' %}
+                        {% if 'Radosne' in item.new.czesc.nazwa %}{% set czClass = 'czesc-radosne' %}{% set czLabel = 'R' %}
+                        {% elseif 'Światła' in item.new.czesc.nazwa %}{% set czClass = 'czesc-swiatla' %}{% set czLabel = 'Ś' %}
+                        {% elseif 'Bolesne' in item.new.czesc.nazwa %}{% set czClass = 'czesc-bolesne' %}{% set czLabel = 'B' %}
+                        {% elseif 'Chwalebne' in item.new.czesc.nazwa %}{% set czClass = 'czesc-chwalebne' %}{% set czLabel = 'Ch' %}
+                        {% endif %}
+                        <span class="czesc-label {{ czClass }}">{{ czLabel }}</span>
+                        {{ item.new.kolejnosc.numer }}. {{ item.new.nazwa }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <div class="note">
+        Każdy uczestnik oddaje poprzednią tajemnicę i otrzymuje nową.
+        Prosimy o codzienne odmawianie jednej dziesiątki różańca w wylosowanej intencji.
+    </div>
+
+    <div class="footer">
+        Wygenerowano: {{ 'now'|date('d.m.Y H:i') }}
+    </div>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { margin: 15mm 12mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 10pt;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #6c3483;
+        }
+        .header h1 {
+            font-size: 16pt;
+            color: #6c3483;
+            margin-bottom: 2px;
+        }
+        .header .sub {
+            font-size: 9pt;
+            color: #666;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+        }
+
+        .czesc-header td {
+            background: #6c3483;
+            color: #fff;
+            font-weight: bold;
+            font-size: 10pt;
+            padding: 5px 8px;
+        }
+        .czesc-radosne td { background: #d4ac0d; color: #333; }
+        .czesc-swiatla td { background: #2e86c1; color: #fff; }
+        .czesc-bolesne td { background: #c0392b; color: #fff; }
+        .czesc-chwalebne td { background: #27ae60; color: #fff; }
+
+        table td, table th {
+            padding: 4px 8px;
+            border-bottom: 1px solid #ddd;
+            vertical-align: middle;
+        }
+        th {
+            background: #f4f4f4;
+            font-weight: bold;
+            font-size: 9pt;
+            text-align: left;
+            border-bottom: 2px solid #999;
+        }
+
+        tr.row-data:nth-child(even) td { background: #fafafa; }
+
+        .poz { text-align: center; width: 30px; font-weight: bold; color: #6c3483; }
+        .nr { text-align: center; width: 25px; }
+        .tajemnica { width: 45%; }
+        .uczestnik { width: 35%; }
+        .uczestnik-empty { color: #999; font-style: italic; }
+
+        .footer {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 8pt;
+            color: #999;
+            border-top: 1px solid #ddd;
+            padding-top: 5px;
+        }
+
+        .stats {
+            margin-top: 8px;
+            display: inline-block;
+            font-size: 9pt;
+            color: #555;
+        }
+        .stats strong { color: #6c3483; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ roza.nazwa }}</h1>
+        <div class="sub">Lista tajemnic — {{ miesiac }}</div>
+    </div>
+
+    <table>
+        <tr>
+            <th class="poz">Poz.</th>
+            <th class="nr">#</th>
+            <th class="tajemnica">Tajemnica</th>
+            <th class="uczestnik">Uczestnik</th>
+        </tr>
+        {% set currentCzesc = '' %}
+        {% for pozycja, pair in pairs %}
+            {% set tajemnica = pair.tajemnica %}
+            {% set uczestnik = pair.uczestnik %}
+            {% set czesc = tajemnica.czesc.nazwa %}
+
+            {% if czesc != currentCzesc %}
+                {% set currentCzesc = czesc %}
+                {% set czescClass = 'czesc-header' %}
+                {% if 'Radosne' in czesc %}{% set czescClass = 'czesc-header czesc-radosne' %}
+                {% elseif 'Światła' in czesc %}{% set czescClass = 'czesc-header czesc-swiatla' %}
+                {% elseif 'Bolesne' in czesc %}{% set czescClass = 'czesc-header czesc-bolesne' %}
+                {% elseif 'Chwalebne' in czesc %}{% set czescClass = 'czesc-header czesc-chwalebne' %}
+                {% endif %}
+                <tr class="{{ czescClass }}">
+                    <td colspan="4">
+                        {% if 'Radosne' in czesc %}Tajemnice Radosne
+                        {% elseif 'Światła' in czesc %}Tajemnice Światła
+                        {% elseif 'Bolesne' in czesc %}Tajemnice Bolesne
+                        {% elseif 'Chwalebne' in czesc %}Tajemnice Chwalebne
+                        {% else %}{{ czesc }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+
+            <tr class="row-data">
+                <td class="poz">{{ pozycja }}</td>
+                <td class="nr">{{ tajemnica.kolejnosc.numer }}.</td>
+                <td class="tajemnica">{{ tajemnica.nazwa }}</td>
+                <td class="uczestnik {% if not uczestnik %}uczestnik-empty{% endif %}">
+                    {% if uczestnik %}
+                        {{ uczestnik.fullName }}
+                    {% else %}
+                        — wolne —
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <div class="stats">
+        Uczestników: <strong>{{ assignedCount }}</strong> / {{ totalCount }}
+        {% if roza.zelator %}
+            &nbsp;&middot;&nbsp; Zelator: <strong>{{ roza.zelator.fullName }}</strong>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        Wygenerowano: {{ 'now'|date('d.m.Y H:i') }}
+    </div>
+</body>
+</html>

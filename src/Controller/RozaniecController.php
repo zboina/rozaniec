@@ -3,6 +3,8 @@
 namespace Rozaniec\RozaniecBundle\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Rozaniec\RozaniecBundle\Entity\Roza;
 use Rozaniec\RozaniecBundle\Entity\Uczestnik;
 use Rozaniec\RozaniecBundle\Model\RozaniecUserInterface;
@@ -842,6 +844,78 @@ class RozaniecController extends AbstractController
     }
 
     /**
+     * Admin — PDF: lista kto odmawia jaką tajemnicę.
+     */
+    #[Route('/admin/roza/{id}/pdf/lista', name: 'rozaniec_admin_pdf_lista')]
+    #[IsGranted('ROLE_ADMIN')]
+    public function adminPdfLista(Roza $roza): Response
+    {
+        $this->rotacjaService->ensureRotated($roza);
+        $pairs = $this->rotacjaService->getUczestnicyWithTajemnice($roza);
+
+        $assigned = 0;
+        foreach ($pairs as $p) {
+            if ($p['uczestnik']) {
+                $assigned++;
+            }
+        }
+
+        $html = $this->renderView('@Rozaniec/pdf/lista_tajemnic.html.twig', [
+            'roza' => $roza,
+            'pairs' => $pairs,
+            'assignedCount' => $assigned,
+            'totalCount' => count($pairs),
+            'miesiac' => self::polskiMiesiac(new \DateTimeImmutable()),
+        ]);
+
+        return $this->generatePdf($html, $roza->getNazwa() . ' - lista tajemnic.pdf');
+    }
+
+    /**
+     * Admin — PDF: raport dla zelatora (wymiana tajemnic: poprzednia → nowa).
+     */
+    #[Route('/admin/roza/{id}/pdf/zelator', name: 'rozaniec_admin_pdf_zelator')]
+    #[IsGranted('ROLE_ADMIN')]
+    public function adminPdfZelator(Roza $roza): Response
+    {
+        $this->rotacjaService->ensureRotated($roza);
+        $pairs = $this->rotacjaService->getUczestnicyWithTajemnice($roza);
+        $tajemnice = $this->rotacjaService->getTajemnice();
+
+        // Indeksuj tajemnice po pozycji
+        $tajByPoz = [];
+        foreach ($tajemnice as $t) {
+            $tajByPoz[$t->getPozycja()] = $t;
+        }
+
+        // Dla każdej pozycji: uczestnik + tajemnica nowa (aktualna) + tajemnica poprzednia (pozycja - 1)
+        $wymiana = [];
+        $assigned = 0;
+        foreach ($pairs as $pozycja => $pair) {
+            $prevPoz = $pozycja === 1 ? 20 : $pozycja - 1;
+            $wymiana[] = [
+                'pozycja' => $pozycja,
+                'uczestnik' => $pair['uczestnik'],
+                'new' => $pair['tajemnica'],
+                'prev' => $tajByPoz[$prevPoz] ?? null,
+            ];
+            if ($pair['uczestnik']) {
+                $assigned++;
+            }
+        }
+
+        $html = $this->renderView('@Rozaniec/pdf/zelator_wymiana.html.twig', [
+            'roza' => $roza,
+            'wymiana' => $wymiana,
+            'assignedCount' => $assigned,
+            'totalCount' => count($pairs),
+            'miesiac' => self::polskiMiesiac(new \DateTimeImmutable()),
+        ]);
+
+        return $this->generatePdf($html, $roza->getNazwa() . ' - wymiana tajemnic.pdf');
+    }
+
+    /**
      * Admin — zapisz zelatora róży.
      */
     #[Route('/admin/roza/{id}/zelator', name: 'rozaniec_admin_save_zelator', methods: ['POST'])]
@@ -872,6 +946,34 @@ class RozaniecController extends AbstractController
     }
 
     // ========== HELPERS ==========
+
+    private function generatePdf(string $html, string $filename): Response
+    {
+        $options = new Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('isRemoteEnabled', false);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return new Response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    private static function polskiMiesiac(\DateTimeInterface $date): string
+    {
+        $miesiace = [
+            1 => 'styczeń', 2 => 'luty', 3 => 'marzec', 4 => 'kwiecień',
+            5 => 'maj', 6 => 'czerwiec', 7 => 'lipiec', 8 => 'sierpień',
+            9 => 'wrzesień', 10 => 'październik', 11 => 'listopad', 12 => 'grudzień',
+        ];
+
+        return $miesiace[(int) $date->format('n')] . ' ' . $date->format('Y');
+    }
 
     private function resolveFirstName(object $user): string
     {
